@@ -1,8 +1,12 @@
 import axios from 'axios';
 import { useAuthStore } from '@/stores/auth.store';
 
+// In dev, VITE_API_URL is unset so requests proxy through Vite (/api → localhost:4000).
+// In production (Vercel), set VITE_API_URL=https://your-api-host in the Vercel dashboard.
+const API_BASE = import.meta.env.VITE_API_URL ?? '';
+
 const client = axios.create({
-  baseURL: '/api',
+  baseURL: `${API_BASE}/api`,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });
@@ -51,7 +55,7 @@ client.interceptors.response.use(
 
     try {
       const res = await axios.post<{ accessToken: string; user: import('@questboard/shared').User }>(
-        '/api/auth/refresh',
+        `${API_BASE}/api/auth/refresh`,
         {},
         { withCredentials: true },
       );
