@@ -104,6 +104,17 @@ export function useCreateCard(boardId: string) {
   });
 }
 
+export function useReorderColumns(boardId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (order: string[]) => boardsApi.reorderColumns(boardId, order),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['columns', boardId] });
+    },
+    onError: () => toast.error('Failed to reorder columns'),
+  });
+}
+
 export function useDeleteColumn(boardId: string) {
   const qc = useQueryClient();
   return useMutation({

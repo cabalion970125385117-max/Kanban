@@ -28,6 +28,9 @@ interface BoardState {
     toIndex: number,
   ) => void;
 
+  // Optimistic column reorder
+  moveColumnOptimistic: (fromIndex: number, toIndex: number) => void;
+
   clear: () => void;
 }
 
@@ -105,6 +108,14 @@ export const useBoardStore = create<BoardState>((set) => ({
       newCards[toColumnId] = toList;
 
       return { cards: newCards };
+    }),
+
+  moveColumnOptimistic: (fromIndex, toIndex) =>
+    set((s) => {
+      const cols = [...s.columns];
+      const [col] = cols.splice(fromIndex, 1);
+      cols.splice(toIndex, 0, col);
+      return { columns: cols };
     }),
 
   clear: () => set({ activeBoard: null, columns: [], cards: {}, labels: [] }),

@@ -32,7 +32,7 @@ export function AddColumnButton({ boardId }: AddColumnButtonProps) {
       <div className="flex-shrink-0 w-64">
         <Button
           variant="ghost"
-          className="w-full h-10 border-2 border-dashed border-white/30 text-white/70 hover:bg-white/10 hover:text-white hover:border-white/50"
+          className="w-full h-10 border-2 border-dashed border-[var(--color-accent)]/40 text-[var(--color-accent)] bg-[var(--color-surface)]/80 hover:bg-[var(--color-accent)]/10 hover:border-[var(--color-accent)]/70 transition-colors"
           onClick={() => setOpen(true)}
         >
           <Plus className="h-4 w-4 mr-1" />
