@@ -103,3 +103,37 @@ export interface Card {
   substep_count?: number;
   substep_done?: number;
 }
+
+export interface Substep {
+  id: string;
+  card_id: string;
+  name: string;
+  is_complete: boolean;
+  order_index: number;
+  target_date: string | null;
+  created_at: string;
+}
+
+export interface TimeLog {
+  id: string;
+  card_id: string;
+  user_id: string;
+  user_name?: string;
+  minutes: number;
+  is_billable: boolean;
+  logged_at: string; // YYYY-MM-DD
+  note: string | null;
+  created_at: string;
+}
+
+export interface Comment {
+  id: string;
+  card_id: string;
+  user_id: string;
+  user_name?: string;
+  user_avatar?: string;
+  body: string;
+  parent_id: string | null;
+  created_at: string;
+  updated_at: string;
+}

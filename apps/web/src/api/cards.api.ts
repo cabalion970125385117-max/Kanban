@@ -61,8 +61,9 @@ async function enrichCard(row: CardRow): Promise<Card> {
     updated_at: row.updated_at,
     owners: owners.filter(Boolean) as Card['owners'],
     labels,
-    substep_count: 0,
-    substep_done: 0,
+    substep_count: await db.countFromIndex('substeps', 'by-card', row.id),
+    substep_done: (await db.getAllFromIndex('substeps', 'by-card', row.id))
+      .filter((s) => s.is_complete).length,
   };
 }
 
