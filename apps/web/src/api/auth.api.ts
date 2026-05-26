@@ -2,7 +2,7 @@
  * auth.api.ts — local-first implementation backed by IndexedDB + bcryptjs.
  * No server required.
  */
-import bcrypt from 'bcryptjs';
+import { hashPassword, verifyPassword } from '@/lib/crypto';
 import { getDB, uid, now } from '@/lib/db';
 import { seedDB } from '@/lib/db/seed';
 import { useAuthStore } from '@/stores/auth.store';
@@ -44,7 +44,7 @@ export async function login(data: LoginInput): Promise<AuthTokens> {
   }
   if (!user) throw makeError('Invalid credentials');
 
-  const valid = await bcrypt.compare(data.password, user.password_hash);
+  const valid = await verifyPassword(data.password, user.password_hash);
   if (!valid) throw makeError('Invalid credentials');
 
   await db.put('users', { ...user, last_login_at: now() });
@@ -64,7 +64,7 @@ export async function register(data: RegisterInput): Promise<AuthTokens> {
   const existing = await db.getFromIndex('users', 'by-email', data.email);
   if (existing) throw makeError('Email already registered');
 
-  const hash = await bcrypt.hash(data.password, 8);
+  const hash = await hashPassword(data.password);
   const archetype = data.avatar_archetype ?? 'knight';
   const avatars = await db.getAllFromIndex('avatars', 'by-archetype', archetype);
   const avatar = avatars[0];

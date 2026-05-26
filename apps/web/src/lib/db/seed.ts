@@ -1,4 +1,4 @@
-import bcrypt from 'bcryptjs';
+import { hashPassword } from '@/lib/crypto';
 import { getDB, uid, now } from './index';
 import type { HeroArchetype } from '@questboard/shared';
 
@@ -63,7 +63,7 @@ export async function seedDB(): Promise<void> {
   // ── superadmin ───────────────────────────────────────────────────────────
   const existing = await db.getFromIndex('users', 'by-email', 'cabal@questboard.app');
   if (!existing) {
-    const hash = await bcrypt.hash('cabal', 8);
+    const hash = await hashPassword('cabal');
     const knights = await db.getAllFromIndex('avatars', 'by-archetype', 'knight');
     await db.put('users', {
       id: uid(),
