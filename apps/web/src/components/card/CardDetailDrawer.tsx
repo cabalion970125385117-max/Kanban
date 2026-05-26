@@ -25,6 +25,8 @@ export function CardDetailDrawer({ card, boardId, onClose }: CardDetailDrawerPro
   const [editingDesc, setEditingDesc] = useState(false);
   const [description, setDescription] = useState('');
   const [estimateHours, setEstimateHours] = useState<string>('');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
 
   const updateCard = useUpdateCard(boardId);
   const archiveCard = useArchiveCard(boardId);
@@ -35,6 +37,8 @@ export function CardDetailDrawer({ card, boardId, onClose }: CardDetailDrawerPro
       setTitle(card.title);
       setDescription(card.description ?? '');
       setEstimateHours(card.estimate_hours != null ? String(card.estimate_hours) : '');
+      setStartDate(card.start_date ?? '');
+      setEndDate(card.end_date ?? '');
       setEditingTitle(false);
       setEditingDesc(false);
     }
@@ -144,10 +148,12 @@ export function CardDetailDrawer({ card, boardId, onClose }: CardDetailDrawerPro
               </label>
               <input
                 type="date"
-                value={card.start_date ?? ''}
-                onChange={(e) =>
-                  updateCard.mutate({ cardId: card.id, data: { start_date: e.target.value || null } })
-                }
+                value={startDate}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setStartDate(val);
+                  updateCard.mutate({ cardId: card.id, data: { start_date: val || null } });
+                }}
                 className="w-full text-sm border border-[var(--color-border)] rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
               />
             </div>
@@ -157,10 +163,12 @@ export function CardDetailDrawer({ card, boardId, onClose }: CardDetailDrawerPro
               </label>
               <input
                 type="date"
-                value={card.end_date ?? ''}
-                onChange={(e) =>
-                  updateCard.mutate({ cardId: card.id, data: { end_date: e.target.value || null } })
-                }
+                value={endDate}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setEndDate(val);
+                  updateCard.mutate({ cardId: card.id, data: { end_date: val || null } });
+                }}
                 className="w-full text-sm border border-[var(--color-border)] rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
               />
             </div>
