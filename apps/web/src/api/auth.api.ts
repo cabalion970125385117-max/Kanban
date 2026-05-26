@@ -32,6 +32,15 @@ function toUser(row: UserRow, avatar?: AvatarRow): User {
 
 // ─── public API ───────────────────────────────────────────────────────────────
 
+async function recordLoginAttempt(identifier: string, success: boolean, userId: string | null) {
+  try {
+    const db = await getDB();
+    await db.put('login_attempts', { id: uid(), identifier, success, userId, timestamp: now() });
+  } catch {
+    // non-fatal
+  }
+}
+
 export async function login(data: LoginInput): Promise<AuthTokens> {
   await seedDB();
   const db = await getDB();
@@ -42,16 +51,24 @@ export async function login(data: LoginInput): Promise<AuthTokens> {
     const byName = await db.getAllFromIndex('users', 'by-name', data.identifier);
     user = byName[0];
   }
-  if (!user) throw makeError('Invalid credentials');
+  if (!user) {
+    await recordLoginAttempt(data.identifier, false, null);
+    throw makeError('Invalid credentials');
+  }
 
   const valid = await verifyPassword(data.password, user.password_hash);
-  if (!valid) throw makeError('Invalid credentials');
+  if (!valid) {
+    await recordLoginAttempt(data.identifier, false, user.id);
+    throw makeError('Invalid credentials');
+  }
 
   await db.put('users', { ...user, last_login_at: now() });
 
   const token = uid();
   const SESSION_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
   await db.put('sessions', { token, userId: user.id, expiresAt: Date.now() + SESSION_TTL });
+
+  await recordLoginAttempt(data.identifier, true, user.id);
 
   const avatar = user.avatar_id ? (await db.get('avatars', user.avatar_id)) ?? undefined : undefined;
   return { accessToken: token, user: toUser(user, avatar) };

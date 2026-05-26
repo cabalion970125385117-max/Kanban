@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'member' | 'guest';
+export type UserRole = 'admin' | 'maintenance' | 'member' | 'guest';
 export type UserStatus = 'active' | 'inactive' | 'suspended';
 export type Priority = 'low' | 'medium' | 'high' | 'critical';
 export type HeroArchetype =

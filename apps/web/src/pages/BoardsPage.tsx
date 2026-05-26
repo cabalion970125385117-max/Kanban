@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Plus, LayoutGrid, LogOut } from 'lucide-react';
+import { Plus, LayoutGrid, LogOut, Settings, Bug, Scroll } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
+import { useSettingsStore } from '@/stores/settings.store';
+import { useUiStore } from '@/stores/ui.store';
 import { logout } from '@/api/auth.api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { VersionBadge } from '@/components/shared/VersionBadge';
 import { useBoards, useCreateBoard } from '@/hooks/useBoard';
 import type { UserRole } from '@questboard/shared';
 
@@ -18,6 +21,8 @@ const ARCHETYPE_EMOJI: Record<string, string> = {
 export function BoardsPage() {
   const navigate = useNavigate();
   const { user, clearAuth } = useAuthStore();
+  const { openSettings } = useSettingsStore();
+  const { openBugReport, openChangelog } = useUiStore();
   const [creating, setCreating] = useState(false);
   const [boardName, setBoardName] = useState('');
 
@@ -49,10 +54,11 @@ export function BoardsPage() {
       {/* Top nav */}
       <header className="bg-[var(--color-primary)] text-white px-6 py-4 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">⚔️</span>
+          <span className="text-2xl">{'⚔️'}</span>
           <span className="font-bold text-lg tracking-wide">QuestBoard</span>
+          <VersionBadge className="text-white/50" />
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           {user && (
             <div className="flex items-center gap-2">
               <span className="text-lg">
@@ -62,6 +68,33 @@ export function BoardsPage() {
               <Badge variant={user.role as UserRole}>{user.role}</Badge>
             </div>
           )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={openChangelog}
+            className="text-white hover:bg-white/10"
+            title="Changelog"
+          >
+            <Scroll className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={openBugReport}
+            className="text-white hover:bg-white/10"
+            title="Report a bug"
+          >
+            <Bug className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={openSettings}
+            className="text-white hover:bg-white/10"
+            title="Settings"
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -130,7 +163,7 @@ export function BoardsPage() {
                 className="group text-left bg-[var(--color-surface)] rounded-xl p-5 card-shadow border border-transparent hover:border-[var(--color-accent)]/30 transition-all"
               >
                 <div className="flex items-start justify-between mb-3">
-                  <div className="text-2xl">🏰</div>
+                  <div className="text-2xl">{'🏰'}</div>
                   <LayoutGrid className="h-4 w-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] transition-colors" />
                 </div>
                 <h3 className="font-semibold text-[var(--color-text)] truncate mb-1">
@@ -145,7 +178,7 @@ export function BoardsPage() {
           </div>
         ) : (
           <div className="text-center py-24">
-            <div className="text-6xl mb-6">🏰</div>
+            <div className="text-6xl mb-6">{'🏰'}</div>
             <h3 className="text-xl font-bold text-[var(--color-primary)] mb-2">No boards yet</h3>
             <p className="text-[var(--color-text-muted)] mb-8">Create your first board to get started.</p>
             <Button onClick={() => setCreating(true)}>

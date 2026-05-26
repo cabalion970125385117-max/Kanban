@@ -7,6 +7,7 @@ import { SubstepList } from './SubstepList';
 import { TimeTracker } from './TimeTracker';
 import { CommentThread } from './CommentThread';
 import { AttachmentPanel } from './AttachmentPanel';
+import { TypingIndicator } from '@/components/collaboration/TypingIndicator';
 import { useUpdateCard, useArchiveCard } from '@/hooks/useCard';
 import { useBoardStore } from '@/stores/board.store';
 import type { Card, Priority } from '@questboard/shared';
@@ -15,11 +16,13 @@ interface CardDetailDrawerProps {
   card: Card | null;
   boardId: string;
   onClose: () => void;
+  emitTypingStart?: (cardId: string) => void;
+  emitTypingStop?: (cardId: string) => void;
 }
 
 const PRIORITIES: Priority[] = ['low', 'medium', 'high', 'critical'];
 
-export function CardDetailDrawer({ card, boardId, onClose }: CardDetailDrawerProps) {
+export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emitTypingStop }: CardDetailDrawerProps) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [title, setTitle] = useState('');
   const [editingDesc, setEditingDesc] = useState(false);
@@ -211,9 +214,11 @@ export function CardDetailDrawer({ card, boardId, onClose }: CardDetailDrawerPro
                 autoFocus
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                onBlur={saveDescription}
+                onFocus={() => emitTypingStart?.(card.id)}
+                onBlur={() => { emitTypingStop?.(card.id); saveDescription(); }}
                 onKeyDown={(e) => {
                   if (e.key === 'Escape') {
+                    emitTypingStop?.(card.id);
                     setDescription(card.description ?? '');
                     setEditingDesc(false);
                   }
@@ -294,6 +299,7 @@ export function CardDetailDrawer({ card, boardId, onClose }: CardDetailDrawerPro
 
           {/* ── Comments ── */}
           <div className="border-t border-[var(--color-border)] pt-4 pb-4">
+            <TypingIndicator cardId={card.id} />
             <CommentThread cardId={card.id} />
           </div>
 

@@ -121,6 +121,53 @@ export interface AttachmentRow {
   created_at: string;
 }
 
+export interface LoginAttemptRow {
+  id: string;
+  identifier: string;
+  success: boolean;
+  userId: string | null;
+  timestamp: string;
+}
+
+export interface BugReportRow {
+  id: string;
+  title: string;
+  description: string;
+  category: 'ui_bug' | 'functionality' | 'performance' | 'security' | 'other';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  current_page: string;
+  submitted_by: string | null;
+  status: 'open' | 'in_progress' | 'resolved';
+  created_at: string;
+}
+
+export interface ErrorLogRow {
+  id: string;
+  message: string;
+  stack: string | null;
+  page_url: string;
+  created_at: string;
+}
+
+export interface NotificationRow {
+  id: string;
+  user_id: string;
+  type: 'announcement' | 'system';
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface AnnouncementRow {
+  id: string;
+  title: string;
+  message: string;
+  sent_by: string;
+  sent_to_count: number;
+  created_at: string;
+}
+
 // ─── DB Schema ────────────────────────────────────────────────────────────────
 
 interface QBSchema extends DBSchema {
@@ -183,10 +230,35 @@ interface QBSchema extends DBSchema {
     value: AttachmentRow;
     indexes: { 'by-card': string };
   };
+  login_attempts: {
+    key: string;
+    value: LoginAttemptRow;
+    indexes: { 'by-timestamp': string };
+  };
+  bug_reports: {
+    key: string;
+    value: BugReportRow;
+    indexes: { 'by-status': string; 'by-severity': string };
+  };
+  error_logs: {
+    key: string;
+    value: ErrorLogRow;
+    indexes: { 'by-timestamp': string };
+  };
+  notifications: {
+    key: string;
+    value: NotificationRow;
+    indexes: { 'by-user': string; 'by-type': string };
+  };
+  announcements: {
+    key: string;
+    value: AnnouncementRow;
+    indexes: { 'by-timestamp': string };
+  };
 }
 
 const DB_NAME = 'questboard';
-const DB_VERSION = 3; // v3 adds attachments store
+const DB_VERSION = 5; // v5 adds notifications, announcements
 
 let _db: Promise<IDBPDatabase<QBSchema>> | null = null;
 
@@ -239,6 +311,29 @@ export function getDB(): Promise<IDBPDatabase<QBSchema>> {
         if (oldVersion < 3) {
           const attachments = db.createObjectStore('attachments', { keyPath: 'id' });
           attachments.createIndex('by-card', 'card_id', { unique: false });
+        }
+
+        // ── v4 stores (maintenance / observability) ──────────────────────────
+        if (oldVersion < 4) {
+          const attempts = db.createObjectStore('login_attempts', { keyPath: 'id' });
+          attempts.createIndex('by-timestamp', 'timestamp', { unique: false });
+
+          const bugs = db.createObjectStore('bug_reports', { keyPath: 'id' });
+          bugs.createIndex('by-status', 'status', { unique: false });
+          bugs.createIndex('by-severity', 'severity', { unique: false });
+
+          const errors = db.createObjectStore('error_logs', { keyPath: 'id' });
+          errors.createIndex('by-timestamp', 'created_at', { unique: false });
+        }
+
+        // ── v5 stores (notifications / announcements) ────────────────────────
+        if (oldVersion < 5) {
+          const notifs = db.createObjectStore('notifications', { keyPath: 'id' });
+          notifs.createIndex('by-user', 'user_id', { unique: false });
+          notifs.createIndex('by-type', 'type', { unique: false });
+
+          const ann = db.createObjectStore('announcements', { keyPath: 'id' });
+          ann.createIndex('by-timestamp', 'created_at', { unique: false });
         }
       },
     });

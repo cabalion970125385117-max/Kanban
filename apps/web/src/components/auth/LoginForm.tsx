@@ -1,17 +1,22 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { useNavigate, Link } from 'react-router-dom';
+import { Eye } from 'lucide-react';
 import { loginSchema, type LoginInput } from '@questboard/shared';
 import { login } from '@/api/auth.api';
 import { useAuthStore } from '@/stores/auth.store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { LoginModeToggle, type LoginMode } from './LoginModeToggle';
 
 export function LoginForm() {
   const navigate = useNavigate();
-  const setAuth = useAuthStore((s) => s.setAuth);
+  const { setAuth, clearAuth } = useAuthStore();
+  const [loginMode, setLoginMode] = useState<LoginMode>('regular');
+  const [revealPassword, setRevealPassword] = useState(false);
 
   const {
     register,
@@ -26,8 +31,20 @@ export function LoginForm() {
     try {
       const { accessToken, user } = await login(data);
       setAuth(accessToken, user);
-      toast.success(`Welcome back, ${user.name}!`);
-      navigate('/boards');
+
+      if (loginMode === 'maintenance') {
+        if (user.role !== 'admin' && user.role !== 'maintenance') {
+          clearAuth();
+          toast.error('This account does not have maintenance access');
+          return;
+        }
+        toast.success(`Welcome, ${user.name}. Entering maintenance mode.`);
+        // Delay by one tick so Zustand state commits before AdminRoute renders
+        setTimeout(() => navigate('/maintenance'), 0);
+      } else {
+        toast.success(`Welcome back, ${user.name}!`);
+        navigate('/boards');
+      }
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
@@ -59,14 +76,30 @@ export function LoginForm() {
             Forgot password?
           </Link>
         </div>
-        <Input
-          id="password"
-          type="password"
-          placeholder="••••••••"
-          autoComplete="current-password"
-          error={errors.password?.message}
-          {...register('password')}
-        />
+        <div className="relative">
+          <Input
+            id="password"
+            type={revealPassword ? 'text' : 'password'}
+            placeholder="••••••••"
+            autoComplete="current-password"
+            className="pr-9"
+            error={errors.password?.message}
+            {...register('password')}
+          />
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); setRevealPassword(true); }}
+            onMouseUp={() => setRevealPassword(false)}
+            onMouseLeave={() => setRevealPassword(false)}
+            onTouchStart={(e) => { e.preventDefault(); setRevealPassword(true); }}
+            onTouchEnd={() => setRevealPassword(false)}
+            className="absolute right-2.5 top-2.5 text-[var(--color-text-muted)]/50 hover:text-[var(--color-text-muted)] select-none"
+            aria-label="Hold to reveal password"
+            tabIndex={-1}
+          >
+            <Eye className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-2">
@@ -91,6 +124,8 @@ export function LoginForm() {
           Create one
         </Link>
       </p>
+
+      <LoginModeToggle value={loginMode} onChange={setLoginMode} />
     </form>
   );
 }
