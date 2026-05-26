@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build -w @questboard/web",
+  "buildCommand": "node node_modules/.bin/vite build --root apps/web",
   "outputDirectory": "apps/web/dist",
   "framework": "vite",
   "rewrites": [
