@@ -11,5 +11,9 @@ coverage/
 # Claude Code session data
 .claude/
 
+# Vercel — commit project.json (IDs only, no secrets), ignore runtime files
+.vercel/*.vc-config.json
+.vercel/output
+
 # Binary design docs (large, not source code)
 *.docx
