@@ -1,5 +1,5 @@
 import client from './client';
-import type { AuthTokens, User } from '@questboard/shared';
+import type { AuthTokens } from '@questboard/shared';
 import type { LoginInput, RegisterInput } from '@questboard/shared';
 
 export async function login(data: LoginInput): Promise<AuthTokens> {

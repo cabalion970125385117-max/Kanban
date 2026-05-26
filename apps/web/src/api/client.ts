@@ -1,14 +1,18 @@
-import axios from 'axios';
+import axios, { type InternalAxiosRequestConfig, type AxiosResponse, type AxiosError } from 'axios';
 import { useAuthStore } from '@/stores/auth.store';
 
+// In dev, VITE_API_URL is unset so requests proxy through Vite (/api → localhost:4000).
+// In production (Vercel), set VITE_API_URL=https://your-api-host in the Vercel dashboard.
+const API_BASE = import.meta.env.VITE_API_URL ?? '';
+
 const client = axios.create({
-  baseURL: '/api',
+  baseURL: `${API_BASE}/api`,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });
 
 // Attach access token to every request
-client.interceptors.request.use((config) => {
+client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = useAuthStore.getState().accessToken;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -29,8 +33,8 @@ function processQueue(error: unknown, token: string | null) {
 
 // Auto-refresh on 401
 client.interceptors.response.use(
-  (response) => response,
-  async (error) => {
+  (response: AxiosResponse) => response,
+  async (error: AxiosError) => {
     const original = error.config as typeof error.config & { _retry?: boolean };
 
     if (error.response?.status !== 401 || original._retry) {
@@ -51,7 +55,7 @@ client.interceptors.response.use(
 
     try {
       const res = await axios.post<{ accessToken: string; user: import('@questboard/shared').User }>(
-        '/api/auth/refresh',
+        `${API_BASE}/api/auth/refresh`,
         {},
         { withCredentials: true },
       );

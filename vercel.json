@@ -1,0 +1,9 @@
+{
+  "installCommand": "npm install --include=dev",
+  "buildCommand": "cd apps/web && node ../../node_modules/.bin/vite build",
+  "outputDirectory": "apps/web/dist",
+  "framework": null,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
