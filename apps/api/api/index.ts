@@ -8,6 +8,9 @@ import { errorHandler } from '../src/middleware/errorHandler';
 import { apiRateLimit } from '../src/middleware/rateLimit';
 import authRoutes from '../src/routes/auth';
 import usersRoutes from '../src/routes/users';
+import boardRoutes from '../src/routes/boards';
+import columnRoutes from '../src/routes/columns';
+import cardsRoutes, { boardCardsRouter } from '../src/routes/cards';
 
 const app = express();
 
@@ -47,6 +50,10 @@ app.use(async (_req, res, next) => {
 app.use('/api', apiRateLimit);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/boards', boardRoutes);
+app.use('/api/boards', columnRoutes);
+app.use('/api/boards', boardCardsRouter);
+app.use('/api/cards', cardsRoutes);
 app.use(errorHandler);
 
 export default app;

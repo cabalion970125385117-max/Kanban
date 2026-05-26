@@ -10,6 +10,9 @@ import { errorHandler } from './middleware/errorHandler';
 import { apiRateLimit } from './middleware/rateLimit';
 import authRoutes from './routes/auth';
 import usersRoutes from './routes/users';
+import boardRoutes from './routes/boards';
+import columnRoutes from './routes/columns';
+import cardsRoutes, { boardCardsRouter } from './routes/cards';
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -33,6 +36,10 @@ app.get('/health', (_req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/boards', boardRoutes);
+app.use('/api/boards', columnRoutes);
+app.use('/api/boards', boardCardsRouter);
+app.use('/api/cards', cardsRoutes);
 
 app.use(errorHandler);
 

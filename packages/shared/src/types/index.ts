@@ -48,3 +48,58 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
 }
+
+export interface Board {
+  id: string;
+  name: string;
+  owner_id: string;
+  created_at: string;
+  archived_at: string | null;
+  member_count?: number;
+}
+
+export interface BoardMember {
+  board_id: string;
+  user_id: string;
+  role: UserRole;
+  user?: Pick<User, 'id' | 'name' | 'email'> & { avatar?: Pick<Avatar, 'thumb_url'> };
+}
+
+export interface Column {
+  id: string;
+  board_id: string;
+  name: string;
+  colour: string;
+  order_index: number;
+  wip_limit: number | null;
+  created_at: string;
+  card_count?: number;
+}
+
+export interface Label {
+  id: string;
+  board_id: string;
+  name: string;
+  colour: string;
+}
+
+export interface Card {
+  id: string;
+  board_id: string;
+  column_id: string;
+  title: string;
+  description: string | null;
+  priority: Priority;
+  start_date: string | null;
+  end_date: string | null;
+  estimate_hours: number | null;
+  order_index: number;
+  archived_at: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  owners?: Array<{ id: string; name: string; avatar?: Pick<Avatar, 'thumb_url'> }>;
+  labels?: Label[];
+  substep_count?: number;
+  substep_done?: number;
+}
