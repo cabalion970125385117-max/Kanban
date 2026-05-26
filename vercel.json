@@ -1,6 +1,6 @@
 {
   "installCommand": "npm install --include=dev",
-  "buildCommand": "npm run build --workspace=@questboard/web",
+  "buildCommand": "cd apps/web && node ../../node_modules/.bin/vite build",
   "outputDirectory": "apps/web/dist",
   "framework": null,
   "rewrites": [
