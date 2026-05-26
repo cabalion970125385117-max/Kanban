@@ -6,6 +6,10 @@
     "apps/*",
     "packages/*"
   ],
+  "devDependencies": {
+    "vite": "^5.3.1",
+    "@vitejs/plugin-react": "^4.3.1"
+  },
   "scripts": {
     "dev:api": "npm run dev --workspace=apps/api",
     "dev:web": "npm run dev --workspace=apps/web",

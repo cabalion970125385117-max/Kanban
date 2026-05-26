@@ -1,5 +1,5 @@
 {
-  "buildCommand": "node node_modules/.bin/vite build --root apps/web",
+  "buildCommand": "npx --no vite build --root apps/web",
   "outputDirectory": "apps/web/dist",
   "framework": "vite",
   "rewrites": [
