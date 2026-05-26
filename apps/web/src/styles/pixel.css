@@ -1,0 +1,52 @@
+/* Pixel art avatar sprites */
+.pixel-avatar {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Hero archetype colour variants */
+.avatar-knight-1  { background: #5B4FCF; }
+.avatar-knight-2  { background: #2C1F6B; }
+.avatar-knight-3  { background: #7B6FDF; }
+.avatar-knight-4  { background: #4A90D9; }
+
+.avatar-mage-1    { background: #9B59B6; }
+.avatar-mage-2    { background: #6C3483; }
+.avatar-mage-3    { background: #BB8FCE; }
+.avatar-mage-4    { background: #D7BDE2; }
+
+.avatar-archer-1  { background: #2EA64A; }
+.avatar-archer-2  { background: #1E8449; }
+.avatar-archer-3  { background: #58D68D; }
+.avatar-archer-4  { background: #A9DFBF; }
+
+.avatar-paladin-1 { background: #F4D03F; }
+.avatar-paladin-2 { background: #D4AC0D; }
+.avatar-paladin-3 { background: #F9E79F; }
+.avatar-paladin-4 { background: #E07B2A; }
+
+.avatar-rogue-1   { background: #1A1A2E; }
+.avatar-rogue-2   { background: #333366; }
+.avatar-rogue-3   { background: #555588; }
+.avatar-rogue-4   { background: #888899; }
+
+.avatar-sorcerer-1  { background: #D94040; }
+.avatar-sorcerer-2  { background: #9B2335; }
+.avatar-sorcerer-3  { background: #E87C7C; }
+.avatar-sorcerer-4  { background: #F1948A; }
+
+.avatar-berserker-1 { background: #E07B2A; }
+.avatar-berserker-2 { background: #A04000; }
+.avatar-berserker-3 { background: #F0A868; }
+.avatar-berserker-4 { background: #FAD7A0; }
+
+.avatar-herald-1  { background: #17A589; }
+.avatar-herald-2  { background: #0E6655; }
+.avatar-herald-3  { background: #48C9B0; }
+.avatar-herald-4  { background: #A2D9CE; }
+
+/* Pixel font utility */
+.font-pixel {
+  font-family: 'Press Start 2P', monospace;
+  line-height: 1.8;
+}

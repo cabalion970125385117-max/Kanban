@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS labels (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  board_id UUID REFERENCES boards(id) ON DELETE CASCADE,
+  name VARCHAR(50) NOT NULL,
+  colour VARCHAR(7) NOT NULL
+);

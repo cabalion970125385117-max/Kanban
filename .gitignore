@@ -1,0 +1,15 @@
+node_modules/
+dist/
+build/
+.env
+*.local
+.DS_Store
+coverage/
+*.log
+.turbo/
+
+# Claude Code session data
+.claude/
+
+# Binary design docs (large, not source code)
+*.docx
