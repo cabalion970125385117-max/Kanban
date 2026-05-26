@@ -6,6 +6,7 @@ import { PriorityBadge } from '@/components/shared/PriorityBadge';
 import { SubstepList } from './SubstepList';
 import { TimeTracker } from './TimeTracker';
 import { CommentThread } from './CommentThread';
+import { AttachmentPanel } from './AttachmentPanel';
 import { useUpdateCard, useArchiveCard } from '@/hooks/useCard';
 import { useBoardStore } from '@/stores/board.store';
 import type { Card, Priority } from '@questboard/shared';
@@ -23,6 +24,7 @@ export function CardDetailDrawer({ card, boardId, onClose }: CardDetailDrawerPro
   const [title, setTitle] = useState('');
   const [editingDesc, setEditingDesc] = useState(false);
   const [description, setDescription] = useState('');
+  const [estimateHours, setEstimateHours] = useState<string>('');
 
   const updateCard = useUpdateCard(boardId);
   const archiveCard = useArchiveCard(boardId);
@@ -32,6 +34,7 @@ export function CardDetailDrawer({ card, boardId, onClose }: CardDetailDrawerPro
     if (card) {
       setTitle(card.title);
       setDescription(card.description ?? '');
+      setEstimateHours(card.estimate_hours != null ? String(card.estimate_hours) : '');
       setEditingTitle(false);
       setEditingDesc(false);
     }
@@ -172,13 +175,20 @@ export function CardDetailDrawer({ card, boardId, onClose }: CardDetailDrawerPro
               type="number"
               min="0"
               step="0.5"
-              value={card.estimate_hours ?? ''}
-              onChange={(e) =>
-                updateCard.mutate({
-                  cardId: card.id,
-                  data: { estimate_hours: e.target.value ? parseFloat(e.target.value) : null },
-                })
-              }
+              value={estimateHours}
+              onChange={(e) => setEstimateHours(e.target.value)}
+              onBlur={() => {
+                const val = estimateHours.trim();
+                const parsed = val ? parseFloat(val) : null;
+                const current = card.estimate_hours ?? null;
+                if (parsed !== current) {
+                  updateCard.mutate({ cardId: card.id, data: { estimate_hours: parsed } });
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                if (e.key === 'Escape') setEstimateHours(card.estimate_hours != null ? String(card.estimate_hours) : '');
+              }}
               className="w-28 text-sm border border-[var(--color-border)] rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
             />
           </div>
@@ -214,6 +224,11 @@ export function CardDetailDrawer({ card, boardId, onClose }: CardDetailDrawerPro
                 )}
               </div>
             )}
+          </div>
+
+          {/* ── Attachments ── */}
+          <div className="border-t border-[var(--color-border)] pt-4">
+            <AttachmentPanel cardId={card.id} />
           </div>
 
           {/* ── Subtasks ── */}
@@ -263,7 +278,10 @@ export function CardDetailDrawer({ card, boardId, onClose }: CardDetailDrawerPro
 
           {/* ── Time Tracking ── */}
           <div className="border-t border-[var(--color-border)] pt-4">
-            <TimeTracker cardId={card.id} estimateHours={card.estimate_hours} />
+            <TimeTracker
+              cardId={card.id}
+              estimateHours={estimateHours ? parseFloat(estimateHours) : null}
+            />
           </div>
 
           {/* ── Comments ── */}

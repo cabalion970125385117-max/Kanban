@@ -110,6 +110,17 @@ export interface CommentRow {
   updated_at: string;
 }
 
+export interface AttachmentRow {
+  id: string;
+  card_id: string;
+  user_id: string;
+  name: string;
+  mime_type: string;
+  size: number;
+  data: string; // base64 data URL
+  created_at: string;
+}
+
 // ─── DB Schema ────────────────────────────────────────────────────────────────
 
 interface QBSchema extends DBSchema {
@@ -167,10 +178,15 @@ interface QBSchema extends DBSchema {
     value: CommentRow;
     indexes: { 'by-card': string };
   };
+  attachments: {
+    key: string;
+    value: AttachmentRow;
+    indexes: { 'by-card': string };
+  };
 }
 
 const DB_NAME = 'questboard';
-const DB_VERSION = 2; // bumped for Phase 3 stores
+const DB_VERSION = 3; // v3 adds attachments store
 
 let _db: Promise<IDBPDatabase<QBSchema>> | null = null;
 
@@ -217,6 +233,12 @@ export function getDB(): Promise<IDBPDatabase<QBSchema>> {
 
           const comments = db.createObjectStore('comments', { keyPath: 'id' });
           comments.createIndex('by-card', 'card_id', { unique: false });
+        }
+
+        // ── v3 stores (attachments) ──────────────────────────────────────────
+        if (oldVersion < 3) {
+          const attachments = db.createObjectStore('attachments', { keyPath: 'id' });
+          attachments.createIndex('by-card', 'card_id', { unique: false });
         }
       },
     });

@@ -19,6 +19,14 @@ function timeAgo(isoString: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+function fullTimestamp(isoString: string): string {
+  const d = new Date(isoString);
+  return d.toLocaleString(undefined, {
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
 export function CommentThread({ cardId }: CommentThreadProps) {
   const { data: comments = [] } = useComments(cardId);
   const create = useCreateComment(cardId);
@@ -72,9 +80,19 @@ export function CommentThread({ cardId }: CommentThreadProps) {
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-1.5 mb-0.5">
                 <span className="text-xs font-semibold text-[var(--color-text)]">{comment.user_name}</span>
-                <span className="text-[10px] text-[var(--color-text-muted)]">{timeAgo(comment.created_at)}</span>
+                <span
+                  className="text-[10px] text-[var(--color-text-muted)] cursor-default"
+                  title={fullTimestamp(comment.created_at)}
+                >
+                  {timeAgo(comment.created_at)}
+                </span>
                 {comment.updated_at !== comment.created_at && (
-                  <span className="text-[10px] text-[var(--color-text-muted)] italic">(edited)</span>
+                  <span
+                    className="text-[10px] text-[var(--color-text-muted)] italic cursor-default"
+                    title={`Edited ${fullTimestamp(comment.updated_at)}`}
+                  >
+                    (edited)
+                  </span>
                 )}
               </div>
 
