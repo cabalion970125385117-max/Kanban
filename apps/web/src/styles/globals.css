@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+  :root, [data-theme="light"] {
     --color-primary: #2C1F6B;
     --color-accent: #5B4FCF;
     --color-accent-light: #7B6FDF;
@@ -16,6 +16,21 @@
     --color-border: #CCCCCC;
     --color-text: #1A1A2E;
     --color-text-muted: #666666;
+  }
+
+  [data-theme="dark"] {
+    --color-primary: #4A3FA8;
+    --color-accent: #7B6FDF;
+    --color-accent-light: #9B8FEF;
+    --color-success: #3DBE5A;
+    --color-warning: #F08C40;
+    --color-danger: #E85555;
+    --color-info: #5BA0E8;
+    --color-bg: #0F0F1A;
+    --color-surface: #1A1A2E;
+    --color-border: #2E2E4A;
+    --color-text: #E8E8F8;
+    --color-text-muted: #8888AA;
   }
 
   * {
@@ -60,4 +75,17 @@
   .skeleton {
     @apply animate-pulse bg-gray-200 rounded;
   }
+}
+
+@media print {
+  .print\:hidden { display: none !important; }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Gantt: show full timeline without scrollbars */
+  .print\:overflow-visible { overflow: visible !important; }
+  .print\:h-auto { height: auto !important; }
 }

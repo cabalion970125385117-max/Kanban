@@ -7,6 +7,9 @@ import { RegisterPage } from '@/pages/RegisterPage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { BoardsPage } from '@/pages/BoardsPage';
 import { BoardPage } from '@/pages/BoardPage';
+import { GanttPage } from '@/pages/GanttPage';
+import { AutomationPage } from '@/pages/AutomationPage';
+import { AnalyticsPage } from '@/pages/AnalyticsPage';
 import { MaintenancePage } from '@/pages/MaintenancePage';
 import { ProtectedRoute } from '@/components/shared/ProtectedRoute';
 import { AdminRoute } from '@/components/shared/AdminRoute';
@@ -56,6 +59,9 @@ export function App() {
             <Route element={<ProtectedRoute />}>
               <Route path="/boards" element={<BoardsPage />} />
               <Route path="/boards/:boardId" element={<BoardPage />} />
+              <Route path="/boards/:boardId/gantt" element={<GanttPage />} />
+              <Route path="/boards/:boardId/automation" element={<AutomationPage />} />
+              <Route path="/boards/:boardId/analytics" element={<AnalyticsPage />} />
               <Route element={<AdminRoute />}>
                 <Route path="/maintenance" element={<MaintenancePage />} />
               </Route>

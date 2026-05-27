@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { BoardHeader } from '@/components/board/BoardHeader';
+import { BoardHeader } from '@/components/board/BoardHeaderV2';
 import { BoardCanvas } from '@/components/board/BoardCanvas';
+import { InboxColumn } from '@/components/board/InboxColumn';
 import { CardDetailDrawer } from '@/components/card/CardDetailDrawer';
+import { LiveCursorLayer } from '@/components/collaboration/LiveCursorLayer';
 import { useBoard } from '@/hooks/useBoard';
 import { useBoardSocket } from '@/hooks/useSocket';
 import { useBoardStore } from '@/stores/board.store';
@@ -14,13 +16,20 @@ export function BoardPage() {
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 
   const { boardQuery, isLoading } = useBoard(boardId ?? '');
-  useBoardSocket(boardId);
+  const { emitCursor, emitTypingStart, emitTypingStop } = useBoardSocket(boardId);
 
   const clear = useBoardStore((s) => s.clear);
 
   useEffect(() => {
     return () => { clear(); };
   }, [boardId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      emitCursor(e.clientX, e.clientY);
+    },
+    [emitCursor],
+  );
 
   if (!boardId) {
     navigate('/boards');
@@ -31,8 +40,8 @@ export function BoardPage() {
     return (
       <div className="h-screen flex items-center justify-center bg-[var(--color-bg)]">
         <div className="text-center">
-          <div className="text-4xl mb-4 animate-pulse">⚔️</div>
-          <p className="text-[var(--color-text-muted)]">Loading board…</p>
+          <div className="text-4xl mb-4 animate-pulse">{'⚔️'}</div>
+          <p className="text-[var(--color-text-muted)]">Loading board&hellip;</p>
         </div>
       </div>
     );
@@ -42,7 +51,7 @@ export function BoardPage() {
     return (
       <div className="h-screen flex items-center justify-center bg-[var(--color-bg)]">
         <div className="text-center">
-          <div className="text-4xl mb-4">🏚️</div>
+          <div className="text-4xl mb-4">{'🏚️'}</div>
           <p className="text-[var(--color-danger)] font-medium mb-4">Board not found or access denied.</p>
           <button
             onClick={() => navigate('/boards')}
@@ -58,18 +67,31 @@ export function BoardPage() {
   const board = boardQuery.data;
 
   return (
-    <div className="h-screen flex flex-col bg-[var(--color-bg)] overflow-hidden">
+    <div
+      className="h-screen flex flex-col bg-[var(--color-bg)] overflow-hidden"
+      onMouseMove={handleMouseMove}
+    >
       {board && <BoardHeader board={board} />}
 
-      <main className="flex-1 overflow-hidden py-4">
-        <BoardCanvas boardId={boardId} onCardClick={setSelectedCard} />
+      {/* ── Task-banner slot — reserved for future animated banner (current task + team count) ── */}
+      <div className="h-10 flex-shrink-0 border-b border-[var(--color-border)]" aria-hidden="true" />
+
+      <main className="flex-1 overflow-hidden flex">
+        <InboxColumn boardId={boardId} />
+        <div className="flex-1 overflow-hidden py-4">
+          <BoardCanvas boardId={boardId} onCardClick={setSelectedCard} />
+        </div>
       </main>
 
       <CardDetailDrawer
         card={selectedCard}
         boardId={boardId}
         onClose={() => setSelectedCard(null)}
+        emitTypingStart={emitTypingStart}
+        emitTypingStop={emitTypingStop}
       />
+
+      <LiveCursorLayer />
     </div>
   );
 }

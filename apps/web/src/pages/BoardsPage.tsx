@@ -25,6 +25,7 @@ export function BoardsPage() {
   const { openBugReport, openChangelog } = useUiStore();
   const [creating, setCreating] = useState(false);
   const [boardName, setBoardName] = useState('');
+  const [boardNameError, setBoardNameError] = useState('');
 
   const { data: boards, isLoading } = useBoards();
   const createBoard = useCreateBoard();
@@ -39,7 +40,11 @@ export function BoardsPage() {
 
   const submitBoard = () => {
     const trimmed = boardName.trim();
-    if (!trimmed) return;
+    if (!trimmed) {
+      setBoardNameError('Board name is required');
+      return;
+    }
+    setBoardNameError('');
     createBoard.mutate({ name: trimmed }, {
       onSuccess: (board) => {
         setBoardName('');
@@ -107,6 +112,9 @@ export function BoardsPage() {
         </div>
       </header>
 
+      {/* ── Task-banner slot — reserved for future animated banner (current task + team count) ── */}
+      <div className="h-10 flex-shrink-0 border-b border-[var(--color-border)]" aria-hidden="true" />
+
       <main className="max-w-5xl mx-auto px-6 py-10">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -126,17 +134,22 @@ export function BoardsPage() {
           <div className="bg-[var(--color-surface)] border border-[var(--color-accent)]/30 rounded-xl p-5 mb-6 shadow-sm">
             <h3 className="font-semibold mb-3 text-[var(--color-primary)]">Create a board</h3>
             <div className="flex gap-3">
-              <Input
-                autoFocus
-                placeholder="Board name…"
-                value={boardName}
-                onChange={(e) => setBoardName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') submitBoard();
-                  if (e.key === 'Escape') { setCreating(false); setBoardName(''); }
-                }}
-                className="flex-1"
-              />
+              <div className="flex-1">
+                <Input
+                  autoFocus
+                  placeholder="Board name…"
+                  value={boardName}
+                  onChange={(e) => { setBoardName(e.target.value); if (boardNameError) setBoardNameError(''); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') submitBoard();
+                    if (e.key === 'Escape') { setCreating(false); setBoardName(''); setBoardNameError(''); }
+                  }}
+                  className={boardNameError ? 'border-[var(--color-danger)]' : ''}
+                />
+                {boardNameError && (
+                  <p className="text-xs text-[var(--color-danger)] mt-1">{boardNameError}</p>
+                )}
+              </div>
               <Button onClick={submitBoard} loading={createBoard.isPending}>
                 Create
               </Button>

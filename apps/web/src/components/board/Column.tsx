@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus, MoreHorizontal, Trash2, GripVertical } from 'lucide-react';
+import { Plus, MoreHorizontal, Trash2, GripVertical, Pencil, Hash } from 'lucide-react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CardFace } from '@/components/card/CardFace';
-import { useCreateCard, useDeleteColumn } from '@/hooks/useBoard';
+import { useCreateCard, useUpdateColumn, useDeleteColumn } from '@/hooks/useBoard';
 import type { Column as ColumnType, Card } from '@questboard/shared';
 
 interface ColumnProps {
@@ -24,9 +25,32 @@ export function Column({ column, cards, boardId, onCardClick }: ColumnProps) {
   const [addingCard, setAddingCard] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+  const [settingWip, setSettingWip] = useState(false);
+  const [wipValue, setWipValue] = useState('');
 
   const createCard = useCreateCard(boardId);
+  const updateColumn = useUpdateColumn(boardId);
   const deleteColumn = useDeleteColumn(boardId);
+
+  const submitRename = () => {
+    const trimmed = renameValue.trim();
+    if (trimmed && trimmed !== column.name) {
+      updateColumn.mutate({ columnId: column.id, data: { name: trimmed } });
+    }
+    setRenaming(false);
+  };
+
+  const submitWip = () => {
+    const val = wipValue.trim();
+    const parsed = val === '' ? null : parseInt(val, 10);
+    if (parsed !== column.wip_limit && (parsed === null || (!isNaN(parsed) && parsed > 0))) {
+      updateColumn.mutate({ columnId: column.id, data: { wip_limit: parsed } });
+    }
+    setSettingWip(false);
+    setMenuOpen(false);
+  };
 
   // ── Sortable (for column reordering) ──────────────────────────────────────
   const {
@@ -94,7 +118,26 @@ export function Column({ column, cards, boardId, onCardClick }: ColumnProps) {
         </button>
 
         <div className="flex items-center gap-2 min-w-0 flex-1 ml-1">
-          <span className="text-white font-semibold text-sm truncate">{column.name}</span>
+          {renaming ? (
+            <input
+              autoFocus
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onBlur={submitRename}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') submitRename();
+                if (e.key === 'Escape') setRenaming(false);
+              }}
+              className="bg-white/20 text-white text-sm font-semibold px-1 rounded w-full outline-none min-w-0"
+            />
+          ) : (
+            <span
+              className="text-white font-semibold text-sm truncate cursor-pointer hover:underline"
+              onClick={() => { setRenameValue(column.name); setRenaming(true); }}
+            >
+              {column.name}
+            </span>
+          )}
           <span className="text-white/70 text-xs bg-black/20 rounded-full px-1.5 py-0.5 tabular-nums flex-shrink-0">
             {cards.length}
             {column.wip_limit != null && `/${column.wip_limit}`}
@@ -122,11 +165,62 @@ export function Column({ column, cards, boardId, onCardClick }: ColumnProps) {
               <MoreHorizontal className="h-3.5 w-3.5" />
             </Button>
             {menuOpen && (
-              <div className="absolute right-0 top-7 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-lg z-10 min-w-[140px]">
+              <div className="absolute right-0 top-7 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-lg z-10 min-w-[160px]">
                 <button
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-danger)] hover:bg-red-50 rounded-lg"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-text)] hover:bg-[var(--color-bg)] rounded-t-lg"
+                  onClick={() => { setMenuOpen(false); setRenameValue(column.name); setRenaming(true); }}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Rename
+                </button>
+                {settingWip ? (
+                  <div className="px-3 py-2 flex items-center gap-2">
+                    <input
+                      autoFocus
+                      type="number"
+                      min="1"
+                      placeholder="Limit…"
+                      value={wipValue}
+                      onChange={(e) => setWipValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') submitWip();
+                        if (e.key === 'Escape') { setSettingWip(false); setMenuOpen(false); }
+                      }}
+                      className="w-16 text-sm border border-[var(--color-border)] rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+                    />
+                    <button
+                      onClick={submitWip}
+                      className="text-xs text-[var(--color-accent)] font-medium hover:underline"
+                    >
+                      Set
+                    </button>
+                    {column.wip_limit != null && (
+                      <button
+                        onClick={() => { updateColumn.mutate({ columnId: column.id, data: { wip_limit: null } }); setSettingWip(false); setMenuOpen(false); }}
+                        className="text-xs text-[var(--color-text-muted)] hover:underline"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+                    onClick={() => { setWipValue(column.wip_limit != null ? String(column.wip_limit) : ''); setSettingWip(true); }}
+                  >
+                    <Hash className="h-3.5 w-3.5" />
+                    {column.wip_limit != null ? `WIP limit: ${column.wip_limit}` : 'Set WIP limit'}
+                  </button>
+                )}
+                <div className="border-t border-[var(--color-border)] my-1" />
+                <button
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-danger)] hover:bg-red-50 rounded-b-lg"
                   onClick={() => {
                     setMenuOpen(false);
+                    if (cards.length > 0) {
+                      toast.error('Move or archive all cards before deleting this column');
+                      return;
+                    }
                     deleteColumn.mutate(column.id);
                   }}
                 >

@@ -10,6 +10,7 @@ import { AttachmentPanel } from './AttachmentPanel';
 import { TypingIndicator } from '@/components/collaboration/TypingIndicator';
 import { useUpdateCard, useArchiveCard } from '@/hooks/useCard';
 import { useBoardStore } from '@/stores/board.store';
+import { AssigneesPanel } from './AssigneesPanel';
 import type { Card, Priority } from '@questboard/shared';
 
 interface CardDetailDrawerProps {
@@ -30,6 +31,7 @@ export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emit
   const [estimateHours, setEstimateHours] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [priority, setPriority] = useState<Priority>(card?.priority ?? 'medium');
 
   const updateCard = useUpdateCard(boardId);
   const archiveCard = useArchiveCard(boardId);
@@ -42,6 +44,7 @@ export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emit
       setEstimateHours(card.estimate_hours != null ? String(card.estimate_hours) : '');
       setStartDate(card.start_date ?? '');
       setEndDate(card.end_date ?? '');
+      setPriority(card.priority);
       setEditingTitle(false);
       setEditingDesc(false);
     }
@@ -130,9 +133,12 @@ export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emit
               {PRIORITIES.map((p) => (
                 <button
                   key={p}
-                  onClick={() => updateCard.mutate({ cardId: card.id, data: { priority: p } })}
+                  onClick={() => {
+                    setPriority(p);
+                    updateCard.mutate({ cardId: card.id, data: { priority: p } });
+                  }}
                   className={`rounded-full transition-opacity ${
-                    card.priority === p
+                    priority === p
                       ? 'ring-2 ring-offset-1 ring-[var(--color-accent)]'
                       : 'opacity-60 hover:opacity-100'
                   }`}
@@ -142,6 +148,9 @@ export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emit
               ))}
             </div>
           </div>
+
+          {/* Assignees */}
+          <AssigneesPanel card={card} boardId={boardId} />
 
           {/* Dates + Estimate */}
           <div className="grid grid-cols-2 gap-3">

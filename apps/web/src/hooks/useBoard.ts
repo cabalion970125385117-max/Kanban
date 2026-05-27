@@ -4,7 +4,8 @@ import { toast } from 'sonner';
 import * as boardsApi from '@/api/boards.api';
 import * as cardsApi from '@/api/cards.api';
 import { useBoardStore } from '@/stores/board.store';
-import type { CreateBoardInput, CreateColumnInput, CreateCardInput, Card } from '@questboard/shared';
+import { triggerAutomation } from '@/lib/automation/engine';
+import type { CreateBoardInput, CreateColumnInput, UpdateColumnInput, CreateCardInput, Card, AddBoardMemberInput } from '@questboard/shared';
 
 export function useBoards() {
   return useQuery({
@@ -99,6 +100,7 @@ export function useCreateCard(boardId: string) {
     onSuccess: (card) => {
       useBoardStore.getState().addCard(card);
       qc.invalidateQueries({ queryKey: ['cards', boardId] });
+      void triggerAutomation(boardId, { type: 'card.created', card });
     },
     onError: () => toast.error('Failed to create card'),
   });
@@ -112,6 +114,53 @@ export function useReorderColumns(boardId: string) {
       qc.invalidateQueries({ queryKey: ['columns', boardId] });
     },
     onError: () => toast.error('Failed to reorder columns'),
+  });
+}
+
+export function useUpdateColumn(boardId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ columnId, data }: { columnId: string; data: UpdateColumnInput }) =>
+      boardsApi.updateColumn(boardId, columnId, data),
+    onSuccess: (column) => {
+      useBoardStore.getState().updateColumn(column.id, column);
+      qc.invalidateQueries({ queryKey: ['columns', boardId] });
+    },
+    onError: () => toast.error('Failed to update column'),
+  });
+}
+
+export function useBoardMembers(boardId: string) {
+  return useQuery({
+    queryKey: ['board-members', boardId],
+    queryFn: () => boardsApi.getBoardMembers(boardId),
+    enabled: !!boardId,
+  });
+}
+
+export function useAddBoardMember(boardId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: AddBoardMemberInput) => boardsApi.addBoardMember(boardId, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['board-members', boardId] });
+      qc.invalidateQueries({ queryKey: ['board', boardId] });
+      toast.success('Member added');
+    },
+    onError: () => toast.error('Failed to add member'),
+  });
+}
+
+export function useRemoveBoardMember(boardId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) => boardsApi.removeBoardMember(boardId, userId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['board-members', boardId] });
+      qc.invalidateQueries({ queryKey: ['board', boardId] });
+      toast.success('Member removed');
+    },
+    onError: () => toast.error('Failed to remove member'),
   });
 }
 

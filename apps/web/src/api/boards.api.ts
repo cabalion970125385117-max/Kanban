@@ -120,6 +120,26 @@ export async function removeBoardMember(boardId: string, userId: string): Promis
   await db.delete('board_members', [boardId, userId]);
 }
 
+export async function searchUsers(query: string): Promise<import('@questboard/shared').User[]> {
+  const db = await getDB();
+  const q = query.toLowerCase().trim();
+  if (!q) return [];
+  const rows = await db.getAll('users');
+  return rows
+    .filter((u) => u.status === 'active' && (u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)))
+    .slice(0, 10)
+    .map((u) => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      avatar_id: u.avatar_id,
+      role: u.role,
+      status: u.status,
+      created_at: u.created_at,
+      last_login_at: u.last_login_at,
+    }));
+}
+
 // ─── Columns ──────────────────────────────────────────────────────────────────
 
 export async function getColumns(boardId: string): Promise<Column[]> {

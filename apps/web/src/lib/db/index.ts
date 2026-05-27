@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { HeroArchetype, Priority, UserRole } from '@questboard/shared';
+import type { HeroArchetype, Priority, UserRole, TriggerType, RuleCondition, RuleAction } from '@questboard/shared';
 
 // ─── Row types ────────────────────────────────────────────────────────────────
 
@@ -168,6 +168,30 @@ export interface AnnouncementRow {
   created_at: string;
 }
 
+export interface AutomationRuleRow {
+  id: string;
+  board_id: string;
+  name: string;
+  trigger_type: TriggerType;
+  trigger_config: Record<string, string>;
+  conditions: RuleCondition[];
+  actions: RuleAction[];
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface CardAssignmentRow {
+  id: string;
+  card_id: string | null;  // null until accepted
+  board_id: string;
+  user_id: string;         // assigned to
+  assigned_by_id: string;  // assigned by
+  card_title: string;
+  card_priority: Priority;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
+}
+
 // ─── DB Schema ────────────────────────────────────────────────────────────────
 
 interface QBSchema extends DBSchema {
@@ -255,10 +279,20 @@ interface QBSchema extends DBSchema {
     value: AnnouncementRow;
     indexes: { 'by-timestamp': string };
   };
+  automation_rules: {
+    key: string;
+    value: AutomationRuleRow;
+    indexes: { 'by-board': string };
+  };
+  card_assignments: {
+    key: string;
+    value: CardAssignmentRow;
+    indexes: { 'by-user': string; 'by-board': string; 'by-card': string };
+  };
 }
 
 const DB_NAME = 'questboard';
-const DB_VERSION = 5; // v5 adds notifications, announcements
+const DB_VERSION = 7; // v7 adds card_assignments
 
 let _db: Promise<IDBPDatabase<QBSchema>> | null = null;
 
@@ -334,6 +368,20 @@ export function getDB(): Promise<IDBPDatabase<QBSchema>> {
 
           const ann = db.createObjectStore('announcements', { keyPath: 'id' });
           ann.createIndex('by-timestamp', 'created_at', { unique: false });
+        }
+
+        // ── v6 stores (automation rules) ─────────────────────────────────────
+        if (oldVersion < 6) {
+          const rules = db.createObjectStore('automation_rules', { keyPath: 'id' });
+          rules.createIndex('by-board', 'board_id', { unique: false });
+        }
+
+        // ── v7 stores (card assignments / inbox) ─────────────────────────────
+        if (oldVersion < 7) {
+          const asgn = db.createObjectStore('card_assignments', { keyPath: 'id' });
+          asgn.createIndex('by-user', 'user_id', { unique: false });
+          asgn.createIndex('by-board', 'board_id', { unique: false });
+          asgn.createIndex('by-card', 'card_id', { unique: false });
         }
       },
     });

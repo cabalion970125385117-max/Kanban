@@ -11,7 +11,11 @@ export function LoginPage() {
   if (isAuthenticated) return <Navigate to="/boards" replace />;
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[var(--color-bg)] flex flex-col">
+      {/* ── Task-banner slot — reserved for future animated banner (current task + team count) ── */}
+      <div className="h-10 flex-shrink-0 border-b border-[var(--color-border)]" aria-hidden="true" />
+
+      <div className="flex-1 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="text-4xl mb-3">{'⚔️'}</div>
@@ -41,6 +45,7 @@ export function LoginPage() {
             Changelog
           </button>
         </div>
+      </div>
       </div>
     </div>
   );

@@ -161,6 +161,25 @@ export async function deleteCard(cardId: string): Promise<void> {
   await db.put('cards', { ...row, archived_at: now() });
 }
 
+export async function addCardOwner(cardId: string, userId: string): Promise<Card> {
+  const db = await getDB();
+  const row = await db.get('cards', cardId);
+  if (!row) throw makeError('Card not found', 404);
+  if (row.owner_ids.includes(userId)) return enrichCard(row);
+  const updated = { ...row, owner_ids: [...row.owner_ids, userId], updated_at: now() };
+  await db.put('cards', updated);
+  return enrichCard(updated);
+}
+
+export async function removeCardOwner(cardId: string, userId: string): Promise<Card> {
+  const db = await getDB();
+  const row = await db.get('cards', cardId);
+  if (!row) throw makeError('Card not found', 404);
+  const updated = { ...row, owner_ids: row.owner_ids.filter((id) => id !== userId), updated_at: now() };
+  await db.put('cards', updated);
+  return enrichCard(updated);
+}
+
 export async function moveCard(cardId: string, data: MoveCardInput): Promise<Card> {
   const db = await getDB();
   const row = await db.get('cards', cardId);

@@ -126,6 +126,44 @@ export interface TimeLog {
   created_at: string;
 }
 
+// ─── Automation ───────────────────────────────────────────────────────────────
+
+export type TriggerType =
+  | 'card.moved'
+  | 'card.created'
+  | 'card.priority_changed'
+  | 'substep.all_complete';
+
+export type ConditionField = 'priority' | 'column_id' | 'title';
+export type ConditionOp = 'eq' | 'neq' | 'contains' | 'not_contains';
+
+export interface RuleCondition {
+  field: ConditionField;
+  op: ConditionOp;
+  value: string;
+}
+
+export type ActionType = 'set_priority' | 'move_card' | 'send_notification';
+
+export interface RuleAction {
+  type: ActionType;
+  priority?: Priority;
+  column_id?: string;
+  message?: string;
+}
+
+export interface AutomationRule {
+  id: string;
+  board_id: string;
+  name: string;
+  trigger_type: TriggerType;
+  trigger_config: Record<string, string>;
+  conditions: RuleCondition[];
+  actions: RuleAction[];
+  is_active: boolean;
+  created_at: string;
+}
+
 export interface Comment {
   id: string;
   card_id: string;
