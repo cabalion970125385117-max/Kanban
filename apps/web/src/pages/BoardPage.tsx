@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { BoardHeader } from '@/components/board/BoardHeaderV2';
 import { BoardCanvas } from '@/components/board/BoardCanvas';
+import { FilterBar } from '@/components/board/FilterBar';
 import { InboxColumn } from '@/components/board/InboxColumn';
 import { CardDetailDrawer } from '@/components/card/CardDetailDrawer';
 import { LiveCursorLayer } from '@/components/collaboration/LiveCursorLayer';
@@ -14,6 +15,7 @@ export function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+  const [filterUserId, setFilterUserId] = useState<string | null>(null);
 
   const { boardQuery, isLoading } = useBoard(boardId ?? '');
   const { emitCursor, emitTypingStart, emitTypingStop } = useBoardSocket(boardId);
@@ -76,10 +78,16 @@ export function BoardPage() {
       {/* ── Task-banner slot — reserved for future animated banner (current task + team count) ── */}
       <div className="h-10 flex-shrink-0 border-b border-[var(--color-border)]" aria-hidden="true" />
 
+      <FilterBar
+        boardId={boardId}
+        activeFilter={filterUserId}
+        onChange={setFilterUserId}
+      />
+
       <main id="main-content" className="flex-1 overflow-hidden flex">
         <InboxColumn boardId={boardId} />
         <div className="flex-1 overflow-hidden py-4">
-          <BoardCanvas boardId={boardId} onCardClick={setSelectedCard} />
+          <BoardCanvas boardId={boardId} onCardClick={setSelectedCard} filterUserId={filterUserId} />
         </div>
       </main>
 

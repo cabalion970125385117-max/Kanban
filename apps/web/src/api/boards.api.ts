@@ -120,6 +120,29 @@ export async function removeBoardMember(boardId: string, userId: string): Promis
   await db.delete('board_members', [boardId, userId]);
 }
 
+export async function updateBoardMemberRole(
+  boardId: string,
+  userId: string,
+  newRole: 'admin' | 'member' | 'guest',
+): Promise<void> {
+  const db = await getDB();
+  const existing = await db.get('board_members', [boardId, userId]);
+  if (!existing) throw makeError('Member not found', 404);
+
+  // Guard: cannot remove the last admin
+  if (existing.role === 'admin' && newRole !== 'admin') {
+    const allMembers = await db.getAllFromIndex('board_members', 'by-board', boardId);
+    const adminCount = allMembers.filter((m) => m.role === 'admin').length;
+    if (adminCount <= 1) {
+      throw new Error(
+        'This board must have at least one admin. Promote another member to admin before revoking your own rights.',
+      );
+    }
+  }
+
+  await db.put('board_members', { ...existing, role: newRole });
+}
+
 export async function searchUsers(query: string): Promise<import('@questboard/shared').User[]> {
   const db = await getDB();
   const q = query.toLowerCase().trim();

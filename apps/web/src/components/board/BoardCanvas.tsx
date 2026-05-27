@@ -22,9 +22,11 @@ import type { Card, Column as ColumnType } from '@questboard/shared';
 interface BoardCanvasProps {
   boardId: string;
   onCardClick: (card: Card) => void;
+  /** null = show all cards; a userId = show only cards owned by that user */
+  filterUserId: string | null;
 }
 
-export function BoardCanvas({ boardId, onCardClick }: BoardCanvasProps) {
+export function BoardCanvas({ boardId, onCardClick, filterUserId }: BoardCanvasProps) {
   const { columns, cards, moveCardOptimistic, moveColumnOptimistic } = useBoardStore();
   const moveCard = useMoveCard(boardId);
   const reorderColumns = useReorderColumns(boardId);
@@ -190,15 +192,21 @@ export function BoardCanvas({ boardId, onCardClick }: BoardCanvasProps) {
           role="region"
           aria-label="Board columns"
         >
-          {columns.map((column) => (
-            <Column
-              key={column.id}
-              column={column}
-              cards={cards[column.id] ?? []}
-              boardId={boardId}
-              onCardClick={onCardClick}
-            />
-          ))}
+          {columns.map((column) => {
+            const colCards = cards[column.id] ?? [];
+            const visibleCards = filterUserId === null
+              ? colCards
+              : colCards.filter((c) => c.owners?.some((o) => o.id === filterUserId));
+            return (
+              <Column
+                key={column.id}
+                column={column}
+                cards={visibleCards}
+                boardId={boardId}
+                onCardClick={onCardClick}
+              />
+            );
+          })}
           <AddColumnButton boardId={boardId} />
         </div>
       </SortableContext>

@@ -164,6 +164,20 @@ export function useRemoveBoardMember(boardId: string) {
   });
 }
 
+export function useUpdateBoardMemberRole(boardId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, role }: { userId: string; role: 'admin' | 'member' | 'guest' }) =>
+      boardsApi.updateBoardMemberRole(boardId, userId, role),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['board-members', boardId] });
+    },
+    onError: (err: Error) => {
+      toast.error(err.message ?? 'Failed to update role');
+    },
+  });
+}
+
 export function useDeleteColumn(boardId: string) {
   const qc = useQueryClient();
   return useMutation({
