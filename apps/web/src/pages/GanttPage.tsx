@@ -111,15 +111,15 @@ export function GanttPage() {
 
       {/* ── Toolbar ── */}
       <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--color-border)] bg-[var(--color-surface)] flex-shrink-0 print:hidden">
-        <Button variant="outline" size="sm" onClick={zoomOut} disabled={zoom === ZOOM_LEVELS[0]}>
+        <Button variant="ghost" size="sm" onClick={zoomOut} disabled={zoom === ZOOM_LEVELS[0]}>
           <ZoomOut className="h-3.5 w-3.5 mr-1" />
           Zoom out
         </Button>
-        <Button variant="outline" size="sm" onClick={zoomIn} disabled={zoom === ZOOM_LEVELS[ZOOM_LEVELS.length - 1]}>
+        <Button variant="ghost" size="sm" onClick={zoomIn} disabled={zoom === ZOOM_LEVELS[ZOOM_LEVELS.length - 1]}>
           <ZoomIn className="h-3.5 w-3.5 mr-1" />
           Zoom in
         </Button>
-        <Button variant="outline" size="sm" onClick={scrollToToday}>
+        <Button variant="ghost" size="sm" onClick={scrollToToday}>
           <CalendarDays className="h-3.5 w-3.5 mr-1" />
           Today
         </Button>
@@ -132,7 +132,7 @@ export function GanttPage() {
           {ganttCards.filter((g) => g.hasBar).length} with dates
         </span>
 
-        <Button variant="outline" size="sm" onClick={handleExportPDF}>
+        <Button variant="ghost" size="sm" onClick={handleExportPDF}>
           <Download className="h-3.5 w-3.5 mr-1" />
           Export PDF
         </Button>

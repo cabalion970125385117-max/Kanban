@@ -30,6 +30,7 @@ export function BoardHeader({ board }: BoardHeaderProps) {
         size="icon"
         onClick={() => navigate('/boards')}
         className="text-white hover:bg-white/10"
+        aria-label="Back to boards"
       >
         <ArrowLeft className="h-4 w-4" />
       </Button>
@@ -53,7 +54,8 @@ export function BoardHeader({ board }: BoardHeaderProps) {
             navigate(isGantt ? `/boards/${board.id}` : `/boards/${board.id}/gantt`)
           }
           className="text-white hover:bg-white/10 text-xs gap-1"
-          title={isGantt ? 'Board view' : 'Gantt view'}
+          title={isGantt ? 'Switch to board view' : 'Switch to Gantt view'}
+          aria-label={isGantt ? 'Switch to board view' : 'Switch to Gantt view'}
         >
           {isGantt ? (
             <>
@@ -73,26 +75,29 @@ export function BoardHeader({ board }: BoardHeaderProps) {
           onClick={() => navigate(`/boards/${board.id}/analytics`)}
           className="text-white hover:bg-white/10"
           title="Analytics"
+          aria-label="Analytics"
         >
-          <BarChart3 className="h-4 w-4" />
+          <BarChart3 className="h-4 w-4" aria-hidden="true" />
         </Button>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => navigate(`/boards/${board.id}/automation`)}
           className="text-white hover:bg-white/10"
-          title="Automation"
+          title="Automation rules"
+          aria-label="Automation rules"
         >
-          <Zap className="h-4 w-4" />
+          <Zap className="h-4 w-4" aria-hidden="true" />
         </Button>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setMembersOpen(true)}
           className="text-white hover:bg-white/10"
-          title="Members"
+          title="Board members"
+          aria-label="Board members"
         >
-          <Users className="h-4 w-4" />
+          <Users className="h-4 w-4" aria-hidden="true" />
         </Button>
         <PresenceBar />
         <Button
@@ -101,8 +106,9 @@ export function BoardHeader({ board }: BoardHeaderProps) {
           onClick={openChangelog}
           className="text-white hover:bg-white/10"
           title="Changelog"
+          aria-label="Changelog"
         >
-          <Scroll className="h-4 w-4" />
+          <Scroll className="h-4 w-4" aria-hidden="true" />
         </Button>
         <Button
           variant="ghost"
@@ -110,8 +116,9 @@ export function BoardHeader({ board }: BoardHeaderProps) {
           onClick={openBugReport}
           className="text-white hover:bg-white/10"
           title="Report a bug"
+          aria-label="Report a bug"
         >
-          <Bug className="h-4 w-4" />
+          <Bug className="h-4 w-4" aria-hidden="true" />
         </Button>
         <Button
           variant="ghost"
@@ -119,8 +126,9 @@ export function BoardHeader({ board }: BoardHeaderProps) {
           onClick={openSettings}
           className="text-white hover:bg-white/10"
           title="Settings"
+          aria-label="Settings"
         >
-          <Settings className="h-4 w-4" />
+          <Settings className="h-4 w-4" aria-hidden="true" />
         </Button>
         <NotificationDrawer />
       </div>

@@ -35,9 +35,9 @@ const HANDLE_WIDTH = 6;
 
 export function GanttBar({
   card,
-  x,
+  x: _x,
   y,
-  width,
+  width: _width,
   rowHeight,
   dayWidth,
   minDate,

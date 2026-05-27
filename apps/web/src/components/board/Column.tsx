@@ -151,8 +151,9 @@ export function Column({ column, cards, boardId, onCardClick }: ColumnProps) {
               variant="ghost"
               className="h-6 w-6 text-white/80 hover:bg-white/20"
               onClick={() => setAddingCard(true)}
+              aria-label={`Add card to ${column.name}`}
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
             </Button>
           )}
           <div className="relative">
@@ -161,8 +162,11 @@ export function Column({ column, cards, boardId, onCardClick }: ColumnProps) {
               variant="ghost"
               className="h-6 w-6 text-white/80 hover:bg-white/20"
               onClick={() => setMenuOpen((o) => !o)}
+              aria-label={`Column options for ${column.name}`}
+              aria-expanded={menuOpen}
+              aria-haspopup="menu"
             >
-              <MoreHorizontal className="h-3.5 w-3.5" />
+              <MoreHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
             </Button>
             {menuOpen && (
               <div className="absolute right-0 top-7 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-lg z-10 min-w-[160px]">
@@ -243,6 +247,8 @@ export function Column({ column, cards, boardId, onCardClick }: ColumnProps) {
       {/* Card list — separate drop target for cards */}
       <div
         ref={setDropRef}
+        role="list"
+        aria-label={`${column.name} cards`}
         className={cn(
           'flex-1 overflow-y-auto p-2 space-y-2 rounded-b-lg border-x border-b border-[var(--color-border)] bg-[var(--color-bg)] min-h-[80px]',
           isOver && 'bg-[var(--color-accent)]/5 border-[var(--color-accent)]/40',

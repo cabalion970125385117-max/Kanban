@@ -88,7 +88,7 @@ async function executeActions(
 async function executeAction(
   action: RuleAction,
   card: Card,
-  boardId: string,
+  _boardId: string,
   ruleName: string,
 ): Promise<void> {
   switch (action.type) {

@@ -76,7 +76,7 @@ export function BoardPage() {
       {/* ── Task-banner slot — reserved for future animated banner (current task + team count) ── */}
       <div className="h-10 flex-shrink-0 border-b border-[var(--color-border)]" aria-hidden="true" />
 
-      <main className="flex-1 overflow-hidden flex">
+      <main id="main-content" className="flex-1 overflow-hidden flex">
         <InboxColumn boardId={boardId} />
         <div className="flex-1 overflow-hidden py-4">
           <BoardCanvas boardId={boardId} onCardClick={setSelectedCard} />

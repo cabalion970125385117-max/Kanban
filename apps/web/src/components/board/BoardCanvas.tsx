@@ -185,7 +185,11 @@ export function BoardCanvas({ boardId, onCardClick }: BoardCanvasProps) {
     >
       {/* Outer SortableContext drives column reordering */}
       <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
-        <div className="flex gap-4 px-4 pb-4 overflow-x-auto h-full items-start">
+        <div
+          className="flex gap-4 px-4 pb-4 overflow-x-auto h-full items-start"
+          role="region"
+          aria-label="Board columns"
+        >
           {columns.map((column) => (
             <Column
               key={column.id}

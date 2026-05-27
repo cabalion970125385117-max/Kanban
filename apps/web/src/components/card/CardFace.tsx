@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Calendar, Clock } from 'lucide-react';
@@ -11,7 +12,7 @@ interface CardFaceProps {
   isDragOverlay?: boolean;
 }
 
-export function CardFace({ card, onClick, isDragOverlay = false }: CardFaceProps) {
+export const CardFace = memo(function CardFace({ card, onClick, isDragOverlay = false }: CardFaceProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card.id,
     data: { type: 'card', card },
@@ -24,12 +25,25 @@ export function CardFace({ card, onClick, isDragOverlay = false }: CardFaceProps
 
   const isOverdue = card.end_date && new Date(card.end_date) < new Date() && !card.archived_at;
 
+  const ariaLabel = [
+    card.title,
+    `${card.priority} priority`,
+    isOverdue ? 'overdue' : null,
+    (card.substep_count ?? 0) > 0
+      ? `${card.substep_done ?? 0} of ${card.substep_count} subtasks done`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(', ');
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       {...attributes}
       {...listeners}
+      aria-label={ariaLabel}
+      role="listitem"
       onClick={() => onClick(card)}
       className={cn(
         'bg-[var(--color-surface)] rounded-lg p-3 card-shadow cursor-pointer select-none',
@@ -105,4 +119,4 @@ export function CardFace({ card, onClick, isDragOverlay = false }: CardFaceProps
       </div>
     </div>
   );
-}
+});

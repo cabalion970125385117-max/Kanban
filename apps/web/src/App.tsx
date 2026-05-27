@@ -1,16 +1,7 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
-import { LoginPage } from '@/pages/LoginPage';
-import { RegisterPage } from '@/pages/RegisterPage';
-import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
-import { BoardsPage } from '@/pages/BoardsPage';
-import { BoardPage } from '@/pages/BoardPage';
-import { GanttPage } from '@/pages/GanttPage';
-import { AutomationPage } from '@/pages/AutomationPage';
-import { AnalyticsPage } from '@/pages/AnalyticsPage';
-import { MaintenancePage } from '@/pages/MaintenancePage';
 import { ProtectedRoute } from '@/components/shared/ProtectedRoute';
 import { AdminRoute } from '@/components/shared/AdminRoute';
 import { SettingsDialog } from '@/components/shared/SettingsDialog';
@@ -18,7 +9,28 @@ import { ChangelogDialog } from '@/components/shared/ChangelogDialog';
 import { BugReportDialog } from '@/components/shared/BugReportDialog';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { MaintenanceBanner } from '@/components/shared/MaintenanceBanner';
+import { SkipNav } from '@/components/shared/SkipNav';
 import { logError } from '@/lib/errorLogger';
+
+// ── Route-level code splitting ────────────────────────────────────────────────
+// Each page is its own JS chunk; the browser only fetches what it needs.
+const LoginPage        = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })));
+const RegisterPage     = lazy(() => import('@/pages/RegisterPage').then(m => ({ default: m.RegisterPage })));
+const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
+const BoardsPage       = lazy(() => import('@/pages/BoardsPage').then(m => ({ default: m.BoardsPage })));
+const BoardPage        = lazy(() => import('@/pages/BoardPage').then(m => ({ default: m.BoardPage })));
+const GanttPage        = lazy(() => import('@/pages/GanttPage').then(m => ({ default: m.GanttPage })));
+const AutomationPage   = lazy(() => import('@/pages/AutomationPage').then(m => ({ default: m.AutomationPage })));
+const AnalyticsPage    = lazy(() => import('@/pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })));
+const MaintenancePage  = lazy(() => import('@/pages/MaintenancePage').then(m => ({ default: m.MaintenancePage })));
+
+function PageFallback() {
+  return (
+    <div className="h-screen flex items-center justify-center bg-[var(--color-bg)]" aria-label="Loading…" role="status">
+      <div className="animate-pulse text-4xl select-none" aria-hidden="true">⚔️</div>
+    </div>
+  );
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,8 +62,10 @@ export function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
+          <SkipNav />
           <UnhandledRejectionLogger />
           <MaintenanceBanner />
+          <Suspense fallback={<PageFallback />}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
@@ -68,6 +82,7 @@ export function App() {
             </Route>
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
+          </Suspense>
           <SettingsDialog />
           <ChangelogDialog />
           <BugReportDialog />

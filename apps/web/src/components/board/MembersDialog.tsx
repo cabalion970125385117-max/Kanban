@@ -84,7 +84,8 @@ export function MembersDialog({ boardId, boardOwnerId, onClose }: MembersDialogP
   const [selectedRole, setSelectedRole] = useState<'admin' | 'member' | 'guest'>('member');
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const memberUserIds = new Set(members.map((m) => m.user_id));
+  // memberUserIds reserved for future duplicate-guard UI
+  void new Set(members.map((m) => m.user_id));
   const isAdmin = members.some((m) => m.user_id === currentUser?.id && (m.role === 'admin' || m.user_id === boardOwnerId));
 
   const membersRef = useRef(members);

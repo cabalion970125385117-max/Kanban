@@ -115,7 +115,7 @@ export function BoardsPage() {
       {/* ── Task-banner slot — reserved for future animated banner (current task + team count) ── */}
       <div className="h-10 flex-shrink-0 border-b border-[var(--color-border)]" aria-hidden="true" />
 
-      <main className="max-w-5xl mx-auto px-6 py-10">
+      <main id="main-content" className="max-w-5xl mx-auto px-6 py-10">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-2xl font-bold text-[var(--color-primary)]">Your Boards</h2>

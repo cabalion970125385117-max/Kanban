@@ -15,7 +15,7 @@ export function LoginPage() {
       {/* ── Task-banner slot — reserved for future animated banner (current task + team count) ── */}
       <div className="h-10 flex-shrink-0 border-b border-[var(--color-border)]" aria-hidden="true" />
 
-      <div className="flex-1 flex items-center justify-center p-4">
+      <div id="main-content" className="flex-1 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="text-4xl mb-3">{'⚔️'}</div>
