@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Plus, LayoutGrid, LogOut, Settings, Bug, Scroll } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
@@ -20,6 +21,7 @@ const ARCHETYPE_EMOJI: Record<string, string> = {
 
 export function BoardsPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user, clearAuth } = useAuthStore();
   const { openSettings } = useSettingsStore();
   const { openBugReport, openChangelog } = useUiStore();
@@ -32,6 +34,7 @@ export function BoardsPage() {
 
   const handleLogout = async () => {
     try { await logout(); } finally {
+      queryClient.clear(); // drop all cached data so the next user starts fresh
       clearAuth();
       navigate('/login');
       toast.success('Signed out');

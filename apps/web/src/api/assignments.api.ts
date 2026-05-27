@@ -6,6 +6,7 @@ import type { Priority } from '@questboard/shared';
 export interface AssignmentWithCard {
   assignment: CardAssignmentRow;
   assignedBy: { id: string; name: string };
+  boardName: string;
 }
 
 export interface InboxNotification extends NotificationRow {
@@ -20,29 +21,36 @@ function currentUserId(): string {
 
 // ── Pending assignments ───────────────────────────────────────────────────────
 
-export async function getMyPendingAssignments(boardId: string): Promise<AssignmentWithCard[]> {
+export async function getMyPendingAssignments(): Promise<AssignmentWithCard[]> {
   const db = await getDB();
   const userId = currentUserId();
   const allForUser = await db.getAllFromIndex('card_assignments', 'by-user', userId);
-  const pending = allForUser.filter((a) => a.board_id === boardId && a.status === 'pending');
+  // Show ALL pending across every board — not scoped to a single board
+  const pending = allForUser.filter((a) => a.status === 'pending');
 
   const results: AssignmentWithCard[] = [];
   for (const a of pending) {
     const assignedBy = await db.get('users', a.assigned_by_id);
     if (!assignedBy) continue;
-    results.push({ assignment: a, assignedBy: { id: assignedBy.id, name: assignedBy.name } });
+    const board = await db.get('boards', a.board_id);
+    results.push({
+      assignment: a,
+      assignedBy: { id: assignedBy.id, name: assignedBy.name },
+      boardName: board?.name ?? 'Unknown board',
+    });
   }
   return results;
 }
 
 // ── Rejected log ─────────────────────────────────────────────────────────────
 
-export async function getMyRejectedAssignments(boardId: string): Promise<AssignmentWithCard[]> {
+export async function getMyRejectedAssignments(): Promise<AssignmentWithCard[]> {
   const db = await getDB();
   const userId = currentUserId();
   const allForUser = await db.getAllFromIndex('card_assignments', 'by-user', userId);
+  // Show ALL recent rejected across every board
   const rejected = allForUser
-    .filter((a) => a.board_id === boardId && a.status === 'rejected')
+    .filter((a) => a.status === 'rejected')
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 10);
 
@@ -50,7 +58,12 @@ export async function getMyRejectedAssignments(boardId: string): Promise<Assignm
   for (const a of rejected) {
     const assignedBy = await db.get('users', a.assigned_by_id);
     if (!assignedBy) continue;
-    results.push({ assignment: a, assignedBy: { id: assignedBy.id, name: assignedBy.name } });
+    const board = await db.get('boards', a.board_id);
+    results.push({
+      assignment: a,
+      assignedBy: { id: assignedBy.id, name: assignedBy.name },
+      boardName: board?.name ?? 'Unknown board',
+    });
   }
   return results;
 }
@@ -126,7 +139,7 @@ export async function issueCard(
   return assignment;
 }
 
-export async function acceptAssignment(assignmentId: string): Promise<string> {
+export async function acceptAssignment(assignmentId: string): Promise<{ cardId: string; boardId: string }> {
   const db = await getDB();
   const a = await db.get('card_assignments', assignmentId);
   if (!a) throw new Error('Assignment not found');
@@ -160,7 +173,14 @@ export async function acceptAssignment(assignmentId: string): Promise<string> {
   });
 
   await db.put('card_assignments', { ...a, status: 'accepted', card_id: cardId });
-  return cardId;
+
+  // Auto-mark the "card assigned" notification as read so the inbox badge clears
+  const userNotifs = await db.getAllFromIndex('notifications', 'by-user', a.user_id);
+  for (const n of userNotifs.filter((n) => !n.is_read && n.message.includes(a.card_title))) {
+    await db.put('notifications', { ...n, is_read: true });
+  }
+
+  return { cardId, boardId: a.board_id };
 }
 
 export async function rejectAssignment(assignmentId: string): Promise<void> {
@@ -168,4 +188,10 @@ export async function rejectAssignment(assignmentId: string): Promise<void> {
   const a = await db.get('card_assignments', assignmentId);
   if (!a) return;
   await db.put('card_assignments', { ...a, status: 'rejected' });
+
+  // Auto-mark the "card assigned" notification as read so the inbox badge clears
+  const userNotifs = await db.getAllFromIndex('notifications', 'by-user', a.user_id);
+  for (const n of userNotifs.filter((n) => !n.is_read && n.message.includes(a.card_title))) {
+    await db.put('notifications', { ...n, is_read: true });
+  }
 }

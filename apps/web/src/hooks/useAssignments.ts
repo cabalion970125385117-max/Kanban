@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   getMyPendingAssignments,
   getMyRejectedAssignments,
@@ -9,27 +10,42 @@ import {
   acceptAssignment,
   rejectAssignment,
 } from '@/api/assignments.api';
+import { useAuthStore } from '@/stores/auth.store';
 
-export function useMyAssignments(boardId: string) {
+// ── helpers ────────────────────────────────────────────────────────────────────
+//
+// Every user-scoped query key includes the current userId so that switching
+// accounts in the same SPA session never serves a previous user's cached data.
+//
+// React Query's prefix-matching means invalidateQueries({ queryKey: ['assignments', boardId] })
+// still correctly invalidates ['assignments', boardId, userId] entries.
+
+// Pending and rejected assignments are now cross-board — the user sees all of
+// them in the inbox regardless of which board they are currently viewing.
+export function useMyAssignments() {
+  const userId = useAuthStore((s) => s.user?.id);
   return useQuery({
-    queryKey: ['assignments', boardId],
-    queryFn: () => getMyPendingAssignments(boardId),
-    enabled: !!boardId,
+    queryKey: ['assignments', userId],
+    queryFn: () => getMyPendingAssignments(),
+    enabled: !!userId,
   });
 }
 
-export function useRejectedAssignments(boardId: string) {
+export function useRejectedAssignments() {
+  const userId = useAuthStore((s) => s.user?.id);
   return useQuery({
-    queryKey: ['assignments-rejected', boardId],
-    queryFn: () => getMyRejectedAssignments(boardId),
-    enabled: !!boardId,
+    queryKey: ['assignments-rejected', userId],
+    queryFn: () => getMyRejectedAssignments(),
+    enabled: !!userId,
   });
 }
 
 export function useInboxNotifications() {
+  const userId = useAuthStore((s) => s.user?.id);
   return useQuery({
-    queryKey: ['inbox-notifications'],
+    queryKey: ['inbox-notifications', userId],
     queryFn: () => getInboxNotifications(),
+    enabled: !!userId,
   });
 }
 
@@ -60,29 +76,41 @@ export function useIssueCard(boardId: string) {
       issueCard(boardId, title, assigneeId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['cards', boardId] });
-      qc.invalidateQueries({ queryKey: ['assignments', boardId] });
+      // Broad invalidation covers the assignee's cross-board query key too
+      qc.invalidateQueries({ queryKey: ['assignments'] });
+      qc.invalidateQueries({ queryKey: ['inbox-notifications'] });
     },
   });
 }
 
-export function useAcceptAssignment(boardId: string) {
+export function useAcceptAssignment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (assignmentId: string) => acceptAssignment(assignmentId),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['assignments', boardId] });
+    onSuccess: ({ boardId }) => {
+      // Invalidate the card list on the assignment's own board (not the viewer's board)
       qc.invalidateQueries({ queryKey: ['cards', boardId] });
+      qc.invalidateQueries({ queryKey: ['assignments'] });
+      qc.invalidateQueries({ queryKey: ['inbox-notifications'] });
+      toast.success('Card accepted — added to the board');
+    },
+    onError: (err: Error) => {
+      toast.error(err.message ?? 'Failed to accept assignment');
     },
   });
 }
 
-export function useRejectAssignment(boardId: string) {
+export function useRejectAssignment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (assignmentId: string) => rejectAssignment(assignmentId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['assignments', boardId] });
-      qc.invalidateQueries({ queryKey: ['assignments-rejected', boardId] });
+      qc.invalidateQueries({ queryKey: ['assignments'] });
+      qc.invalidateQueries({ queryKey: ['inbox-notifications'] });
+      toast.success('Assignment rejected');
+    },
+    onError: (err: Error) => {
+      toast.error(err.message ?? 'Failed to reject assignment');
     },
   });
 }

@@ -44,14 +44,15 @@ export function InboxColumn({ boardId }: InboxColumnProps) {
   const qc = useQueryClient();
   const currentUser = useAuthStore((s) => s.user);
 
-  const { data: assignments = [], isLoading: loadingAssignments } = useMyAssignments(boardId);
-  const { data: rejected = [] } = useRejectedAssignments(boardId);
+  // Assignments are cross-board — show all pending/rejected regardless of current board
+  const { data: assignments = [], isLoading: loadingAssignments } = useMyAssignments();
+  const { data: rejected = [] } = useRejectedAssignments();
   const { data: notifications = [] } = useInboxNotifications();
   const { data: members = [] } = useBoardMembers(boardId);
 
   const issueCard = useIssueCard(boardId);
-  const accept = useAcceptAssignment(boardId);
-  const reject = useRejectAssignment(boardId);
+  const accept = useAcceptAssignment();
+  const reject = useRejectAssignment();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
 
@@ -197,7 +198,7 @@ export function InboxColumn({ boardId }: InboxColumnProps) {
             <p className="text-xs text-[var(--color-text-muted)] px-1 py-2">No pending assignments.</p>
           ) : (
             <div className="space-y-2">
-              {assignments.map(({ assignment, assignedBy }) => (
+              {assignments.map(({ assignment, assignedBy, boardName }) => (
                 <div
                   key={assignment.id}
                   className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-2.5 space-y-1.5"
@@ -212,6 +213,11 @@ export function InboxColumn({ boardId }: InboxColumnProps) {
                     </span>
                     <span className="text-[10px] text-[var(--color-text-muted)] ml-auto">
                       from <span className="font-medium">{assignedBy.name}</span>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] text-[var(--color-text-muted)] bg-[var(--color-border)]/50 rounded px-1.5 py-0.5 truncate max-w-full">
+                      📋 {boardName}
                     </span>
                   </div>
                   <div className="flex gap-1.5 pt-0.5">
@@ -260,7 +266,7 @@ export function InboxColumn({ boardId }: InboxColumnProps) {
                 <p className="text-xs text-[var(--color-text-muted)] px-1 py-2">No rejected assignments.</p>
               ) : (
                 <div className="space-y-1.5">
-                  {rejected.map(({ assignment, assignedBy }) => (
+                  {rejected.map(({ assignment, assignedBy, boardName }) => (
                     <div
                       key={assignment.id}
                       className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-2.5 opacity-60"
@@ -278,7 +284,7 @@ export function InboxColumn({ boardId }: InboxColumnProps) {
                         </span>
                       </div>
                       <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
-                        from <span className="font-medium">{assignedBy.name}</span>
+                        from <span className="font-medium">{assignedBy.name}</span> · {boardName}
                       </p>
                     </div>
                   ))}
