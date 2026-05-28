@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { BoardHeader } from '@/components/board/BoardHeaderV2';
 import { BoardCanvas } from '@/components/board/BoardCanvas';
+import { TableView } from '@/components/board/TableView';
+import { SwimlaneCanvas } from '@/components/board/SwimlaneCanvas';
 import { FilterBar } from '@/components/board/FilterBar';
 import { InboxColumn } from '@/components/board/InboxColumn';
 import { CardDetailDrawer } from '@/components/card/CardDetailDrawer';
@@ -9,13 +11,16 @@ import { LiveCursorLayer } from '@/components/collaboration/LiveCursorLayer';
 import { useBoard } from '@/hooks/useBoard';
 import { useBoardSocket } from '@/hooks/useSocket';
 import { useBoardStore } from '@/stores/board.store';
+import type { ActiveFilters, BoardView, SwimlaneGroupBy } from '@/components/board/FilterBar';
 import type { Card } from '@questboard/shared';
 
 export function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
-  const [filterUserId, setFilterUserId] = useState<string | null>(null);
+  const [filters, setFilters] = useState<ActiveFilters>({ userId: null, priority: null, labelId: null });
+  const [view, setView] = useState<BoardView>('kanban');
+  const [swimlaneGroupBy, setSwimlaneGroupBy] = useState<SwimlaneGroupBy>('priority');
 
   const { boardQuery, isLoading } = useBoard(boardId ?? '');
   const { emitCursor, emitTypingStart, emitTypingStop } = useBoardSocket(boardId);
@@ -75,19 +80,36 @@ export function BoardPage() {
     >
       {board && <BoardHeader board={board} />}
 
-      {/* ── Task-banner slot — reserved for future animated banner (current task + team count) ── */}
+      {/* ── Task-banner slot ── */}
       <div className="h-10 flex-shrink-0 border-b border-[var(--color-border)]" aria-hidden="true" />
 
       <FilterBar
         boardId={boardId}
-        activeFilter={filterUserId}
-        onChange={setFilterUserId}
+        filters={filters}
+        onFiltersChange={setFilters}
+        view={view}
+        onViewChange={setView}
+        swimlaneGroupBy={swimlaneGroupBy}
+        onSwimlaneGroupByChange={setSwimlaneGroupBy}
       />
 
       <main id="main-content" className="flex-1 overflow-hidden flex">
         <InboxColumn boardId={boardId} />
         <div className="flex-1 overflow-hidden py-4">
-          <BoardCanvas boardId={boardId} onCardClick={setSelectedCard} filterUserId={filterUserId} />
+          {view === 'kanban' && (
+            <BoardCanvas boardId={boardId} onCardClick={setSelectedCard} filters={filters} />
+          )}
+          {view === 'table' && (
+            <TableView onCardClick={setSelectedCard} filters={filters} />
+          )}
+          {view === 'swimlane' && (
+            <SwimlaneCanvas
+              boardId={boardId}
+              onCardClick={setSelectedCard}
+              filters={filters}
+              groupBy={swimlaneGroupBy}
+            />
+          )}
         </div>
       </main>
 

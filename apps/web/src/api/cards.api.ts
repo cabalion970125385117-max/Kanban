@@ -59,6 +59,7 @@ async function enrichCard(row: CardRow): Promise<Card> {
     created_by: row.created_by,
     created_at: row.created_at,
     updated_at: row.updated_at,
+    cover_colour: row.cover_colour ?? null,
     owners: owners.filter(Boolean) as Card['owners'],
     labels,
     substep_count: await db.countFromIndex('substeps', 'by-card', row.id),
@@ -148,6 +149,7 @@ export async function updateCard(cardId: string, data: UpdateCardInput): Promise
     start_date: data.start_date !== undefined ? data.start_date : row.start_date,
     end_date: data.end_date !== undefined ? data.end_date : row.end_date,
     estimate_hours: data.estimate_hours !== undefined ? data.estimate_hours : row.estimate_hours,
+    cover_colour: data.cover_colour !== undefined ? data.cover_colour : row.cover_colour,
     updated_at: now(),
   };
   await db.put('cards', updated);

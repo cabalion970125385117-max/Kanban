@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Calendar, Clock, Flag, Archive } from 'lucide-react';
+import { X, Calendar, Clock, Flag, Archive, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PriorityBadge } from '@/components/shared/PriorityBadge';
@@ -32,6 +32,7 @@ export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emit
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [priority, setPriority] = useState<Priority>(card?.priority ?? 'medium');
+  const [coverColour, setCoverColour] = useState<string | null>(card?.cover_colour ?? null);
 
   const updateCard = useUpdateCard(boardId);
   const archiveCard = useArchiveCard(boardId);
@@ -45,6 +46,7 @@ export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emit
       setStartDate(card.start_date ?? '');
       setEndDate(card.end_date ?? '');
       setPriority(card.priority);
+      setCoverColour(card.cover_colour ?? null);
       setEditingTitle(false);
       setEditingDesc(false);
     }
@@ -121,6 +123,46 @@ export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emit
               >
                 {card.title}
               </h2>
+            )}
+          </div>
+
+          {/* Cover colour */}
+          <div>
+            <label className="text-xs font-medium text-[var(--color-text-muted)] flex items-center gap-1 mb-2">
+              <Palette className="h-3.5 w-3.5" /> Card cover
+            </label>
+            <div className="flex items-center gap-2 flex-wrap">
+              {['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#14b8a6'].map((c) => (
+                <button
+                  key={c}
+                  title={c}
+                  onClick={() => {
+                    const next = coverColour === c ? null : c;
+                    setCoverColour(next);
+                    updateCard.mutate({ cardId: card.id, data: { cover_colour: next } });
+                  }}
+                  className="w-6 h-6 rounded-full border-2 transition-transform hover:scale-110"
+                  style={{
+                    backgroundColor: c,
+                    borderColor: coverColour === c ? '#fff' : 'transparent',
+                    boxShadow: coverColour === c ? `0 0 0 2px ${c}` : 'none',
+                  }}
+                />
+              ))}
+              {coverColour && (
+                <button
+                  onClick={() => {
+                    setCoverColour(null);
+                    updateCard.mutate({ cardId: card.id, data: { cover_colour: null } });
+                  }}
+                  className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+            {coverColour && (
+              <div className="mt-2 h-2 rounded-full w-full" style={{ backgroundColor: coverColour }} />
             )}
           </div>
 
@@ -309,7 +351,7 @@ export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emit
           {/* ── Comments ── */}
           <div className="border-t border-[var(--color-border)] pt-4 pb-4">
             <TypingIndicator cardId={card.id} />
-            <CommentThread cardId={card.id} />
+            <CommentThread cardId={card.id} boardId={boardId} />
           </div>
 
         </div>

@@ -75,6 +75,7 @@ export interface CardRow {
   created_by: string;
   created_at: string;
   updated_at: string;
+  cover_colour?: string | null;
   owner_ids: string[];
   label_ids: string[];
 }

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus, MoreHorizontal, Trash2, GripVertical, Pencil, Hash } from 'lucide-react';
+import { Plus, MoreHorizontal, Trash2, GripVertical, Pencil, Hash, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ interface ColumnProps {
 export const CARD_DROP_PREFIX = 'cards:';
 
 export function Column({ column, cards, boardId, onCardClick }: ColumnProps) {
+  const [collapsed, setCollapsed] = useState(false);
   const [addingCard, setAddingCard] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -93,6 +94,35 @@ export function Column({ column, cards, boardId, onCardClick }: ColumnProps) {
     transition,
   };
 
+  if (collapsed) {
+    return (
+      <div
+        ref={setSortableRef}
+        style={columnStyle}
+        className={cn('flex-shrink-0 w-9 flex flex-col max-h-full', isDragging && 'opacity-40')}
+      >
+        <button
+          onClick={() => setCollapsed(false)}
+          title={`Expand ${column.name}`}
+          aria-label={`Expand ${column.name}`}
+          className="flex flex-col items-center gap-2 py-3 rounded-lg h-full w-full"
+          style={{ backgroundColor: column.colour }}
+        >
+          <ChevronRight className="h-3.5 w-3.5 text-white/80 flex-shrink-0" />
+          <span
+            className="text-white font-semibold text-xs flex-1 writing-mode-vertical"
+            style={{ writingMode: 'vertical-rl', textOrientation: 'mixed', transform: 'rotate(180deg)' }}
+          >
+            {column.name}
+          </span>
+          <span className="text-white/70 text-xs bg-black/20 rounded-full px-1 py-0.5 tabular-nums flex-shrink-0">
+            {cards.length}
+          </span>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={setSortableRef}
@@ -145,6 +175,16 @@ export function Column({ column, cards, boardId, onCardClick }: ColumnProps) {
         </div>
 
         <div className="flex items-center gap-0.5 flex-shrink-0">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-6 w-6 text-white/80 hover:bg-white/20"
+            onClick={() => setCollapsed(true)}
+            aria-label={`Collapse ${column.name}`}
+            title="Collapse column"
+          >
+            <ChevronRight className="h-3.5 w-3.5 rotate-180" aria-hidden="true" />
+          </Button>
           {!isAtWipLimit && (
             <Button
               size="icon"

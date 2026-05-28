@@ -130,6 +130,14 @@ export function useUpdateColumn(boardId: string) {
   });
 }
 
+export function useBoardLabels(boardId: string) {
+  return useQuery({
+    queryKey: ['labels', boardId],
+    queryFn: () => boardsApi.getLabels(boardId),
+    enabled: !!boardId,
+  });
+}
+
 export function useBoardMembers(boardId: string) {
   return useQuery({
     queryKey: ['board-members', boardId],

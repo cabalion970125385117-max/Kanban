@@ -17,16 +17,16 @@ import { CardDragOverlay } from '@/components/card/CardDragOverlay';
 import { useBoardStore } from '@/stores/board.store';
 import { useMoveCard, } from '@/hooks/useCard';
 import { useReorderColumns } from '@/hooks/useBoard';
+import type { ActiveFilters } from './FilterBar';
 import type { Card, Column as ColumnType } from '@questboard/shared';
 
 interface BoardCanvasProps {
   boardId: string;
   onCardClick: (card: Card) => void;
-  /** null = show all cards; a userId = show only cards owned by that user */
-  filterUserId: string | null;
+  filters: ActiveFilters;
 }
 
-export function BoardCanvas({ boardId, onCardClick, filterUserId }: BoardCanvasProps) {
+export function BoardCanvas({ boardId, onCardClick, filters }: BoardCanvasProps) {
   const { columns, cards, moveCardOptimistic, moveColumnOptimistic } = useBoardStore();
   const moveCard = useMoveCard(boardId);
   const reorderColumns = useReorderColumns(boardId);
@@ -194,9 +194,12 @@ export function BoardCanvas({ boardId, onCardClick, filterUserId }: BoardCanvasP
         >
           {columns.map((column) => {
             const colCards = cards[column.id] ?? [];
-            const visibleCards = filterUserId === null
-              ? colCards
-              : colCards.filter((c) => c.owners?.some((o) => o.id === filterUserId));
+            const visibleCards = colCards.filter((c) => {
+              if (filters.userId && !c.owners?.some((o) => o.id === filters.userId)) return false;
+              if (filters.priority && c.priority !== filters.priority) return false;
+              if (filters.labelId && !c.labels?.some((l) => l.id === filters.labelId)) return false;
+              return true;
+            });
             return (
               <Column
                 key={column.id}

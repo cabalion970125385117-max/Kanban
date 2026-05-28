@@ -98,6 +98,7 @@ export interface Card {
   created_by: string;
   created_at: string;
   updated_at: string;
+  cover_colour?: string | null;
   owners?: Array<{ id: string; name: string; avatar?: Pick<Avatar, 'thumb_url'> }>;
   labels?: Label[];
   substep_count?: number;
