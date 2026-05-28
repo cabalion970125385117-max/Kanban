@@ -60,6 +60,7 @@ async function enrichCard(row: CardRow): Promise<Card> {
     created_at: row.created_at,
     updated_at: row.updated_at,
     cover_colour: row.cover_colour ?? null,
+    tags: row.card_tags ?? [],
     owners: owners.filter(Boolean) as Card['owners'],
     labels,
     substep_count: await db.countFromIndex('substeps', 'by-card', row.id),
@@ -150,6 +151,7 @@ export async function updateCard(cardId: string, data: UpdateCardInput): Promise
     end_date: data.end_date !== undefined ? data.end_date : row.end_date,
     estimate_hours: data.estimate_hours !== undefined ? data.estimate_hours : row.estimate_hours,
     cover_colour: data.cover_colour !== undefined ? data.cover_colour : row.cover_colour,
+    card_tags: data.tags !== undefined ? data.tags : (row.card_tags ?? []),
     updated_at: now(),
   };
   await db.put('cards', updated);
@@ -217,4 +219,15 @@ export async function moveCard(cardId: string, data: MoveCardInput): Promise<Car
 
   const moved = await db.get('cards', cardId);
   return enrichCard(moved!);
+}
+
+/** Collect all unique tags used across a board (for autocomplete). */
+export async function getBoardTags(boardId: string): Promise<string[]> {
+  const db = await getDB();
+  const rows = await db.getAllFromIndex('cards', 'by-board', boardId);
+  const set = new Set<string>();
+  for (const row of rows) {
+    for (const tag of row.card_tags ?? []) set.add(tag);
+  }
+  return [...set].sort();
 }

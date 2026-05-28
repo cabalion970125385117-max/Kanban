@@ -6,6 +6,22 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.1.0',
+    date: '2026-05-29',
+    changes: [
+      'Board management: archive or permanently delete boards; smart prompt when board has data',
+      'Card tags: add free-form text tags to any card; auto-complete from board tag history',
+      'Progress report: per-member daily/weekly/monthly summary with completion stats and export',
+      'Lark-style views: Table/List view, Swimlane view (group by Priority or Assignee)',
+      'Advanced filter: Priority and Label filters alongside assignee, with AND logic',
+      'Card cover colour: 8-colour picker; colour stripe displayed on card face',
+      'Column collapse: shrink any column to a narrow strip to save space',
+      'Card aging badge: amber ≥3 days idle, red ≥7 days idle',
+      'Subtask progress bar: visual bar replaces text count on card face',
+      '@mention in comments: autocomplete, highlighted rendering, inbox notification',
+    ],
+  },
+  {
     version: '1.0.0',
     date: '2026-05-27',
     changes: [

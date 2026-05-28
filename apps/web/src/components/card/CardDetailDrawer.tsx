@@ -11,6 +11,7 @@ import { TypingIndicator } from '@/components/collaboration/TypingIndicator';
 import { useUpdateCard, useArchiveCard } from '@/hooks/useCard';
 import { useBoardStore } from '@/stores/board.store';
 import { AssigneesPanel } from './AssigneesPanel';
+import { TagsPanel } from './TagsPanel';
 import type { Card, Priority } from '@questboard/shared';
 
 interface CardDetailDrawerProps {
@@ -193,6 +194,9 @@ export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emit
 
           {/* Assignees */}
           <AssigneesPanel card={card} boardId={boardId} />
+
+          {/* Tags */}
+          <TagsPanel cardId={card.id} boardId={boardId} tags={card.tags ?? []} />
 
           {/* Dates + Estimate */}
           <div className="grid grid-cols-2 gap-3">

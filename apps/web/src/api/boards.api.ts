@@ -82,11 +82,61 @@ export async function updateBoard(boardId: string, data: UpdateBoardInput): Prom
   return { ...updated, member_count: members.length };
 }
 
-export async function deleteBoard(boardId: string): Promise<void> {
+/** Soft-delete: sets archived_at, data preserved. */
+export async function archiveBoard(boardId: string): Promise<void> {
   const db = await getDB();
   const b = await db.get('boards', boardId);
   if (!b) return;
   await db.put('boards', { ...b, archived_at: now() });
+}
+
+/** Alias kept for callers using the old name. */
+export const deleteBoard = archiveBoard;
+
+/** Count of active (non-archived) cards so callers know whether to warn. */
+export async function getBoardCardCount(boardId: string): Promise<number> {
+  const db = await getDB();
+  const rows = await db.getAllFromIndex('cards', 'by-board', boardId);
+  return rows.filter((c) => !c.archived_at).length;
+}
+
+/** Hard-delete: removes all board data from IndexedDB permanently. */
+export async function permanentlyDeleteBoard(boardId: string): Promise<void> {
+  const db = await getDB();
+
+  const cards = await db.getAllFromIndex('cards', 'by-board', boardId);
+  for (const card of cards) {
+    const substeps = await db.getAllFromIndex('substeps', 'by-card', card.id);
+    for (const s of substeps) await db.delete('substeps', s.id);
+
+    const timeLogs = await db.getAllFromIndex('time_logs', 'by-card', card.id);
+    for (const t of timeLogs) await db.delete('time_logs', t.id);
+
+    const comments = await db.getAllFromIndex('comments', 'by-card', card.id);
+    for (const c of comments) await db.delete('comments', c.id);
+
+    const attachments = await db.getAllFromIndex('attachments', 'by-card', card.id);
+    for (const a of attachments) await db.delete('attachments', a.id);
+
+    await db.delete('cards', card.id);
+  }
+
+  const labels = await db.getAllFromIndex('labels', 'by-board', boardId);
+  for (const l of labels) await db.delete('labels', l.id);
+
+  const columns = await db.getAllFromIndex('columns', 'by-board', boardId);
+  for (const col of columns) await db.delete('columns', col.id);
+
+  const members = await db.getAllFromIndex('board_members', 'by-board', boardId);
+  for (const m of members) await db.delete('board_members', [m.board_id, m.user_id]);
+
+  const rules = await db.getAllFromIndex('automation_rules', 'by-board', boardId);
+  for (const r of rules) await db.delete('automation_rules', r.id);
+
+  const assignments = await db.getAllFromIndex('card_assignments', 'by-board', boardId);
+  for (const a of assignments) await db.delete('card_assignments', a.id);
+
+  await db.delete('boards', boardId);
 }
 
 // ─── Members ──────────────────────────────────────────────────────────────────

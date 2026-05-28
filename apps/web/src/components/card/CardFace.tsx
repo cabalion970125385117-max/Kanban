@@ -69,7 +69,7 @@ export const CardFace = memo(function CardFace({ card, onClick, isDragOverlay = 
       <div className="p-3">
         {/* Labels */}
         {card.labels && card.labels.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-2">
+          <div className="flex flex-wrap gap-1 mb-1.5">
             {card.labels.map((label) => (
               <span
                 key={label.id}
@@ -78,6 +78,23 @@ export const CardFace = memo(function CardFace({ card, onClick, isDragOverlay = 
                 title={label.name}
               />
             ))}
+          </div>
+        )}
+
+        {/* Tags */}
+        {card.tags && card.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-1.5">
+            {card.tags.slice(0, 4).map((tag) => (
+              <span
+                key={tag}
+                className="text-[10px] px-1.5 py-0 rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent)] font-medium"
+              >
+                #{tag}
+              </span>
+            ))}
+            {card.tags.length > 4 && (
+              <span className="text-[10px] text-[var(--color-text-muted)]">+{card.tags.length - 4}</span>
+            )}
           </div>
         )}
 

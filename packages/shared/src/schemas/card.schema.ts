@@ -19,6 +19,7 @@ export const updateCardSchema = z.object({
   end_date: z.string().nullable().optional(),
   estimate_hours: z.number().positive().nullable().optional(),
   cover_colour: z.string().nullable().optional(),
+  tags: z.array(z.string().max(50)).max(20).optional(),
 });
 export type UpdateCardInput = z.infer<typeof updateCardSchema>;
 

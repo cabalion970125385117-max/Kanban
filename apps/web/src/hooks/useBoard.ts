@@ -186,6 +186,46 @@ export function useUpdateBoardMemberRole(boardId: string) {
   });
 }
 
+export function useArchiveBoard() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (boardId: string) => boardsApi.archiveBoard(boardId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['boards'] });
+      toast.success('Board archived');
+    },
+    onError: () => toast.error('Failed to archive board'),
+  });
+}
+
+export function usePermanentlyDeleteBoard() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (boardId: string) => boardsApi.permanentlyDeleteBoard(boardId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['boards'] });
+      toast.success('Board permanently deleted');
+    },
+    onError: () => toast.error('Failed to delete board'),
+  });
+}
+
+export function useBoardCardCount(boardId: string) {
+  return useQuery({
+    queryKey: ['board-card-count', boardId],
+    queryFn: () => boardsApi.getBoardCardCount(boardId),
+    enabled: !!boardId,
+  });
+}
+
+export function useBoardTags(boardId: string) {
+  return useQuery({
+    queryKey: ['board-tags', boardId],
+    queryFn: () => cardsApi.getBoardTags(boardId),
+    enabled: !!boardId,
+  });
+}
+
 export function useDeleteColumn(boardId: string) {
   const qc = useQueryClient();
   return useMutation({
