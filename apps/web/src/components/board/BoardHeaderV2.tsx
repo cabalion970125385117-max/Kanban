@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Settings, Bug, Scroll, GanttChartSquare, Kanban, Zap, BarChart3, Users } from 'lucide-react';
+import { ArrowLeft, Settings, Bug, Scroll, GanttChartSquare, Kanban, Zap, BarChart3, Users, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PresenceBar } from '@/components/collaboration/PresenceBar';
 import { NotificationDrawer } from '@/components/shared/NotificationDrawer';
 import { VersionBadge } from '@/components/shared/VersionBadge';
 import { BoardMembersDialog } from './BoardMembersDialog';
+import { ProgressReportModal } from './ProgressReportModal';
 import { useSettingsStore } from '@/stores/settings.store';
 import { useUiStore } from '@/stores/ui.store';
 import type { Board } from '@questboard/shared';
@@ -21,6 +22,7 @@ export function BoardHeader({ board }: BoardHeaderProps) {
   const { openSettings } = useSettingsStore();
   const { openBugReport, openChangelog } = useUiStore();
   const [membersOpen, setMembersOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   return (
     <>
@@ -99,6 +101,16 @@ export function BoardHeader({ board }: BoardHeaderProps) {
         >
           <Users className="h-4 w-4" aria-hidden="true" />
         </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setReportOpen(true)}
+          className="text-white hover:bg-white/10"
+          title="Progress report"
+          aria-label="Progress report"
+        >
+          <TrendingUp className="h-4 w-4" aria-hidden="true" />
+        </Button>
         <PresenceBar />
         <Button
           variant="ghost"
@@ -139,6 +151,14 @@ export function BoardHeader({ board }: BoardHeaderProps) {
         boardId={board.id}
         boardOwnerId={board.owner_id}
         onClose={() => setMembersOpen(false)}
+      />
+    )}
+
+    {reportOpen && (
+      <ProgressReportModal
+        boardId={board.id}
+        boardName={board.name}
+        onClose={() => setReportOpen(false)}
       />
     )}
     </>
