@@ -8,6 +8,7 @@ import { FilterBar } from '@/components/board/FilterBar';
 import { InboxColumn } from '@/components/board/InboxColumn';
 import { CardDetailDrawer } from '@/components/card/CardDetailDrawer';
 import { LiveCursorLayer } from '@/components/collaboration/LiveCursorLayer';
+import { QuestBanner } from '@/components/shared/QuestBanner';
 import { useBoard } from '@/hooks/useBoard';
 import { useBoardSocket } from '@/hooks/useSocket';
 import { useBoardStore } from '@/stores/board.store';
@@ -80,8 +81,7 @@ export function BoardPage() {
     >
       {board && <BoardHeader board={board} />}
 
-      {/* ── Task-banner slot ── */}
-      <div className="h-10 flex-shrink-0 border-b border-[var(--color-border)]" aria-hidden="true" />
+      <QuestBanner boardId={boardId} />
 
       <FilterBar
         boardId={boardId}

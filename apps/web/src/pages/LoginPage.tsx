@@ -4,6 +4,7 @@ import { LoginForm } from '@/components/auth/LoginForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { VersionBadge } from '@/components/shared/VersionBadge';
 import { useUiStore } from '@/stores/ui.store';
+import { QuestBanner } from '@/components/shared/QuestBanner';
 
 export function LoginPage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -12,8 +13,7 @@ export function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] flex flex-col">
-      {/* ── Task-banner slot — reserved for future animated banner (current task + team count) ── */}
-      <div className="h-10 flex-shrink-0 border-b border-[var(--color-border)]" aria-hidden="true" />
+      <QuestBanner />{/* demo mode — no boardId */}
 
       <div id="main-content" className="flex-1 flex items-center justify-center p-4">
       <div className="w-full max-w-md">

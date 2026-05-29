@@ -62,7 +62,7 @@ export interface BoardMember {
   board_id: string;
   user_id: string;
   role: UserRole;
-  user?: Pick<User, 'id' | 'name' | 'email'> & { avatar?: Pick<Avatar, 'thumb_url'> };
+  user?: Pick<User, 'id' | 'name' | 'email'> & { avatar?: Pick<Avatar, 'thumb_url' | 'archetype'> };
 }
 
 export interface Column {

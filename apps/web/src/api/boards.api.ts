@@ -153,7 +153,7 @@ export async function getBoardMembers(boardId: string): Promise<BoardMember[]> {
       user_id: r.user_id,
       role: r.role,
       user: user
-        ? { id: user.id, name: user.name, email: user.email, avatar: avatar ? { thumb_url: avatar.thumb_url } : undefined }
+        ? { id: user.id, name: user.name, email: user.email, avatar: avatar ? { thumb_url: avatar.thumb_url, archetype: avatar.archetype } : undefined }
         : undefined,
     });
   }

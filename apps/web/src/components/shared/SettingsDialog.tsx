@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { useSettingsStore } from '@/stores/settings.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore, type Theme } from '@/stores/theme.store';
+import { useQuestStore } from '@/stores/quest.store';
 import { AvatarPicker } from '@/components/auth/AvatarPicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,6 +54,7 @@ export function SettingsDialog() {
   const { open, closeSettings } = useSettingsStore();
   const { user, updateUser } = useAuthStore();
   const { theme, setTheme } = useThemeStore();
+  const { enabled: questEnabled, setEnabled: setQuestEnabled } = useQuestStore();
   const [tab, setTab] = useState<Tab>('avatar');
   const [selectedArchetype, setSelectedArchetype] = useState<HeroArchetype | undefined>(
     user?.avatar?.archetype as HeroArchetype | undefined,
@@ -274,6 +276,50 @@ export function SettingsDialog() {
                   )}
                 </button>
               ))}
+
+              {/* ── Quest Banner toggle ── */}
+              <div className="pt-4 border-t border-[var(--color-border)]">
+                <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">
+                  Quest Banner
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setQuestEnabled(!questEnabled)}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border-2 transition-all text-left ${
+                    questEnabled
+                      ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/5'
+                      : 'border-[var(--color-border)] hover:border-[var(--color-accent)]/40'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">⚔️</span>
+                    <div>
+                      <p className="text-sm font-medium text-[var(--color-text)]">Animated Quest Banner</p>
+                      <p className="text-xs text-[var(--color-text-muted)]">
+                        {questEnabled
+                          ? 'Enabled — monsters march from cave to castle'
+                          : 'Disabled — click to reveal the quest'}
+                      </p>
+                    </div>
+                  </div>
+                  {/* Toggle pill */}
+                  <div
+                    className={`w-10 h-5 rounded-full transition-colors flex-shrink-0 ${
+                      questEnabled ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-border)]'
+                    }`}
+                  >
+                    <div
+                      className={`w-4 h-4 bg-white rounded-full shadow-sm mt-0.5 transition-transform ${
+                        questEnabled ? 'translate-x-5' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </div>
+                </button>
+                <p className="text-xs text-[var(--color-text-muted)] mt-2 px-1">
+                  Each open card spawns a monster. The closer the due date, the nearer it marches to the castle.
+                  Board members stand guard at the battlements.
+                </p>
+              </div>
             </div>
           )}
         </div>
