@@ -1,16 +1,15 @@
 /**
- * QuestBanner — animated pixel-art medieval landscape
+ * QuestBanner — Final Fantasy–inspired pixel-art medieval landscape
  *
- * Left  : cave with glowing eyes (monster lair)
- * Middle: rolling hills — monsters walk here based on card due-date urgency
- * Right : castle with flag and member-avatar guards
+ * Left  : cave with stalactites, glowing eyes, dark arch entrance
+ * Middle: rolling hills — monsters march based on card due-date urgency
+ * Right : castle with battlements, torchlight, flag, member-avatar guards
  *
- * Monster types map to card priority:
+ * Monster types (FF-style outlined sprites with shading):
  *   slime  → low   |  goblin → medium
  *   orc    → high  |  dragon → critical
  *
- * Urgency (0–1) maps urgency to monster X position:
- *   0 = near cave, 1 = at castle gate (overdue cards)
+ * Urgency 0–1 controls monster X: 0 = near cave, 1 = at castle gate
  */
 
 import { useRef, useEffect, useMemo } from 'react';
@@ -21,36 +20,34 @@ import type { Card, BoardMember } from '@questboard/shared';
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
 
-const BANNER_H      = 120;  // CSS px — banner height
-const S             = 2;    // art-pixel size in CSS px (each art-px → S×S rect)
-const GROUND_OFFSET = 32;   // CSS px below canvas bottom (soil depth)
+const BANNER_H      = 120;
+const S             = 2;    // CSS px per art-pixel
+const GROUND_OFFSET = 32;   // soil strip below groundY
 // groundY = BANNER_H - GROUND_OFFSET = 88
 
-// ─── Archetype → accent colour ────────────────────────────────────────────────
+// ─── Archetype colours ────────────────────────────────────────────────────────
 
 const ARCHETYPE_COL: Record<string, string> = {
-  knight:    '#A8B8C8',
-  mage:      '#9B59B6',
-  archer:    '#27AE60',
-  paladin:   '#F1C40F',
-  rogue:     '#566573',
-  sorcerer:  '#2980B9',
-  berserker: '#E74C3C',
-  herald:    '#E67E22',
+  knight:    '#C0C8D0',
+  mage:      '#A855F7',
+  archer:    '#22C55E',
+  paladin:   '#EAB308',
+  rogue:     '#64748B',
+  sorcerer:  '#3B82F6',
+  berserker: '#EF4444',
+  herald:    '#F97316',
 };
 
 // ─── Sprite system ────────────────────────────────────────────────────────────
 
 type Sprite = (string | null)[][];
 
-/** Parse a rows+palette definition into a 2-D colour grid. */
 function sp(rows: string[], pal: Record<string, string>): Sprite {
   return rows.map((row) =>
     Array.from(row).map((ch) => (ch === '.' ? null : (pal[ch] ?? null))),
   );
 }
 
-/** Draw a sprite at CSS position (x, y), using ps CSS px per art-pixel. */
 function blit(
   ctx: CanvasRenderingContext2D,
   spr: Sprite,
@@ -72,42 +69,126 @@ function blit(
   });
 }
 
-// ─── Sprite definitions ───────────────────────────────────────────────────────
+// ─── FF-style Sprites ─────────────────────────────────────────────────────────
+// Every sprite: K=#0D0D0D outline, 3-4 shaded body colours, white eye highlights.
+// Row widths are verified equal within each sprite.
 
-// Slime — 7 wide × 6 tall art-px → 14 × 12 CSS px
+// Slime — 8 wide × 8 tall → 16 × 16 CSS px
+// Blue gelatinous blob with shine and glassy eyes
 const SLIME: Sprite = sp(
-  ['..GGG..', '.GGGGG.', 'GGwGwGG', 'GGGGGGG', '.GdGdG.', '..GGG..'],
-  { G: '#3DD68C', w: '#FFFFF0', d: '#1EB864' },
+  [
+    '.KKKKKK.',  // top arc
+    'KccccccK',  // body
+    'KchhcmmK',  // h=shine, m=shadow
+    'KcccccmK',
+    'KcoKcoKK',  // o=eye-white, K=pupil; right edge shadow
+    'KccmmKK.',  // bottom shadow
+    '.KddKK..',  // d=dark base
+    '........',
+  ],
+  { K: '#0D0D0D', c: '#44CCFF', h: '#AAEEFF', m: '#1B8FC4', d: '#0D5A7A', o: '#FFFFFF' },
 );
 
-// Goblin — 5 wide × 7 tall → 10 × 14 CSS px
+// Goblin — 8 wide × 14 tall → 16 × 28 CSS px
+// Green-skinned imp with leather armour and yellow eyes
 const GOBLIN: Sprite = sp(
-  ['.kkk.', 'kYkYk', 'kkkkk', '.bbb.', 'bbbbb', '.b.b.', '.k.k.'],
-  { k: '#5DAE42', Y: '#FFD700', b: '#8B5E20' },
+  [
+    '.K....K.',  // ear/horn tips
+    '.KGGGGK.',  // head
+    'KGGoKoGK',  // o=eye-white, K=pupil
+    'KGKssKGK',  // K=nostril shadow, s=dark-skin crease
+    'KGttttGK',  // t=teeth
+    '.KBBBBK.',  // B=leather armour
+    'KBBBBBBK',
+    'KBBaBBBK',  // a=armour highlight
+    '.KBBBBK.',  // waist
+    '.KGGKGGK',  // G=green legs
+    '.KGGKGGK',
+    '.KBBKBBK',  // B=boots (re-use leather)
+    '.KBBKBBK',
+    '........',
+  ],
+  { K: '#0D0D0D', G: '#55AA33', o: '#FFFFFF', s: '#2A7015', t: '#E8E8CC', B: '#7A4E18', a: '#A06828' },
 );
 
-// Orc — 6 wide × 8 tall → 12 × 16 CSS px
+// Orc — 10 wide × 14 tall → 20 × 28 CSS px
+// Purple-grey bruiser with steel plate and white tusks
 const ORC: Sprite = sp(
-  ['.PPPP.', 'PrPPPP', 'PPwwPP', 'PPPPPP', '.AAAA.', 'AAAAAA', '.PP.PP', '......'],
-  { P: '#7B4E8A', r: '#FF4444', w: '#FFFFF0', A: '#666677' },
+  [
+    '..KPPPPK..',  // head top
+    '.KPPPPPPK.',
+    'KPPPPPPPpK',  // p=darker-skin right shadow
+    'KPPrKPrKPK',  // r=red iris, K=pupil
+    'KPKPPKpPPK',  // K=nostril marks
+    'KPwPPPwPpK',  // w=white tusk
+    '.KAAAAAAK.',  // A=steel armour (6 A inside)
+    'KAAAAAAAAK',  // full chest (8 A)
+    'KAaAaAaAAK',  // a=armour shadow crease
+    '.KAaAaAaK.',
+    '..KPPKPPK.',  // legs
+    '..KPPKPPK.',
+    '..KBBKBBK.',  // B=dark boot
+    '..........',
+  ],
+  { K: '#0D0D0D', P: '#7B4E8A', p: '#5A3870', r: '#DD4422', w: '#FFFFF0', A: '#909090', a: '#555555', B: '#2A1A1A' },
 );
 
-// Dragon — 8 wide × 8 tall → 16 × 16 CSS px
+// Dragon — 12 wide × 12 tall → 24 × 24 CSS px
+// Red beast with dark-membrane wings and gold accents
 const DRAGON: Sprite = sp(
-  ['W.RRRR.W', 'WRRRRRRW', '.RRRRRR.', '..RYRY..', '..RRRR..', '..R..R..', '..W..W..', '........'],
-  { W: '#880000', R: '#CC2222', Y: '#FFD700' },
+  [
+    'WW..KRRK..WW',  // wing tips + body outline peak
+    'WWKRRRRRRKWW',  // wing spread meets body (6 R)
+    '.WKRRRRRRKW.',  // inner wing
+    '..KRRRRRRK..',  // body trunk
+    '..KRRrKrRRK.',  // r=gold iris, K=pupil
+    '..KRRRKKRRK.',  // KK=jaw/snarl gap
+    '..KRRRRRRK..',
+    '..KRK..KRK..',  // legs split
+    '.WKRrK.KrKW.',  // r=gold claw tips, W=wing lower edge
+    'WW.KK...KK.W',  // wings fold
+    'WW.........W',  // wing base
+    '............',
+  ],
+  { W: '#660000', R: '#CC2222', r: '#FFD700', K: '#0D0D0D' },
 );
 
 const SPRITES: Record<string, Sprite> = {
   slime: SLIME, goblin: GOBLIN, orc: ORC, dragon: DRAGON,
 };
 
-/** Avatar sprite — 5 wide × 8 tall → 10 × 16 CSS px, tinted by archetype. */
+// Avatar — 8 wide × 16 tall → 16 × 32 CSS px (chibi hero)
 function makeAvatar(col: string): Sprite {
   return sp(
-    ['.HHH.', 'HHHHH', 'HHfHH', '.fff.', '.HHH.', 'HHHHH', '.H.H.', '.....'],
-    { H: col, f: '#FFDEAD' },
+    [
+      '.KHHHK..',  // helmet
+      'KHHHHHHK',
+      'KHHfHHHK',  // f=face skin
+      'KffffHHK',  // face
+      '.KHHHHK.',  // neck/collar
+      'KHHHHHHK',  // shoulders
+      'KHHaaHHK',  // a=belt/sash
+      '.KHHHHK.',
+      '..KGGK..',  // G=trouser join
+      '.KGGKGGK',  // legs
+      '.KGGKGGK',
+      '.KGGKGGK',
+      '.KBBKBbK',  // B=boot, b=boot shadow
+      '.KBBKBBK',
+      '.KBBKBBK',
+      '........',
+    ],
+    { K: '#0D0D0D', H: col, f: '#FFDEAD', a: darken(col, 0.35), G: '#3A3A5A', B: '#1A1010', b: '#2A1A1A' },
   );
+}
+
+/** Darken a hex colour by `amount` (0-1). */
+function darken(hex: string, amount: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const f = 1 - amount;
+  return `#${[r, g, b].map((v) => Math.round(v * f).toString(16).padStart(2, '0')).join('')}`;
 }
 
 // ─── Shared types ─────────────────────────────────────────────────────────────
@@ -117,22 +198,22 @@ type MemberInfo = Pick<BoardMember, 'user_id'> & {
   user?: { name?: string; avatar?: { archetype?: string } };
 };
 
-// ─── Demo data (login page — no real board) ───────────────────────────────────
+// ─── Demo data (login page — no board) ───────────────────────────────────────
 
 const _now = Date.now();
 const _DAY = 86_400_000;
 const DEMO_CARDS: CardInfo[] = [
   { id: 'd1', priority: 'low',      end_date: null,                                             archived_at: null },
-  { id: 'd2', priority: 'medium',   end_date: new Date(_now + 9  * _DAY).toISOString().slice(0, 10), archived_at: null },
-  { id: 'd3', priority: 'medium',   end_date: new Date(_now + 5  * _DAY).toISOString().slice(0, 10), archived_at: null },
-  { id: 'd4', priority: 'high',     end_date: new Date(_now + 2  * _DAY).toISOString().slice(0, 10), archived_at: null },
-  { id: 'd5', priority: 'high',     end_date: new Date(_now + 1  * _DAY).toISOString().slice(0, 10), archived_at: null },
-  { id: 'd6', priority: 'critical', end_date: new Date(_now - 1  * _DAY).toISOString().slice(0, 10), archived_at: null },
+  { id: 'd2', priority: 'medium',   end_date: new Date(_now + 9 * _DAY).toISOString().slice(0, 10), archived_at: null },
+  { id: 'd3', priority: 'medium',   end_date: new Date(_now + 5 * _DAY).toISOString().slice(0, 10), archived_at: null },
+  { id: 'd4', priority: 'high',     end_date: new Date(_now + 2 * _DAY).toISOString().slice(0, 10), archived_at: null },
+  { id: 'd5', priority: 'high',     end_date: new Date(_now + 1 * _DAY).toISOString().slice(0, 10), archived_at: null },
+  { id: 'd6', priority: 'critical', end_date: new Date(_now - 1 * _DAY).toISOString().slice(0, 10), archived_at: null },
   { id: 'd7', priority: 'low',      end_date: null,                                             archived_at: null },
 ];
 const DEMO_MEMBERS: MemberInfo[] = [
   { user_id: 'dm1', user: { name: 'Knight', avatar: { archetype: 'knight' } } },
-  { user_id: 'dm2', user: { name: 'Mage',   avatar: { archetype: 'mage' } } },
+  { user_id: 'dm2', user: { name: 'Mage',   avatar: { archetype: 'mage'   } } },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -161,159 +242,160 @@ function hashStr(s: string): number {
   return Math.abs(h);
 }
 
-// Castle dimensions are derived from canvas width so cave/castle agree.
 function castleLayout(W: number) {
   const castleW = Math.min(210, Math.max(140, W * 0.22));
-  const castleL = W - castleW - 6;   // castle left edge
-  const ltX     = castleL;           // left tower left
-  const ltW     = 24;
-  const rtX     = W - 6 - 24;        // right tower left
-  const rtW     = 24;
-  const wallL   = ltX + ltW;         // curtain wall left
-  const wallR   = rtX;               // curtain wall right
-  const wallTop = 88 - 40;           // 48
-  const ltTop   = 88 - 50;           // 38
-  const rtTop   = 88 - 58;           // 30
-  return { castleL, castleW, ltX, ltW, rtX, rtW, wallL, wallR, wallTop, ltTop, rtTop };
+  const castleL = W - castleW - 6;
+  const ltX = castleL, ltW = 24;
+  const rtX = W - 6 - 24, rtW = 24;
+  const wallL = ltX + ltW, wallR = rtX;
+  return {
+    castleL, castleW,
+    ltX, ltW, rtX, rtW,
+    wallL, wallR,
+    wallTop: 48,   // groundY(88) - 40
+    ltTop:   38,   // groundY(88) - 50
+    rtTop:   30,   // groundY(88) - 58
+  };
 }
 
-// ─── Draw: background (sky, clouds, hills, soil) ─────────────────────────────
+// ─── Draw: background ────────────────────────────────────────────────────────
 
-function drawBackground(
-  ctx: CanvasRenderingContext2D,
-  W: number,
-  H: number,
-  t: number,
-) {
-  const groundY = H - GROUND_OFFSET; // 88
+function drawBackground(ctx: CanvasRenderingContext2D, W: number, H: number, t: number) {
+  const groundY = H - GROUND_OFFSET;
 
-  // Sky gradient
-  const sky = ctx.createLinearGradient(0, 0, 0, groundY - 6);
-  sky.addColorStop(0, '#2A6AB8');
-  sky.addColorStop(1, '#9ACEF5');
+  // Sky — deeper FF world-map blue
+  const sky = ctx.createLinearGradient(0, 0, 0, groundY);
+  sky.addColorStop(0,   '#1A3A6A');
+  sky.addColorStop(0.4, '#2B5FAA');
+  sky.addColorStop(1,   '#7ABCE8');
   ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, W, groundY - 6);
+  ctx.fillRect(0, 0, W, groundY);
+
+  // Pixel-star band at very top (static, fast to draw)
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  for (let sx = 8; sx < W; sx += 60 + (hashStr(`s${Math.floor(sx / 60)}`) % 30)) {
+    ctx.fillRect(sx, 3, 1, 1);
+    ctx.fillRect(sx + 22, 9, 1, 1);
+  }
 
   // Drifting clouds
-  ctx.fillStyle = 'rgba(255,255,255,0.84)';
+  ctx.fillStyle = 'rgba(255,255,255,0.80)';
   (
-    [
-      [0.08, 0.18, 18, 0.010],
-      [0.30, 0.12, 22, 0.008],
-      [0.56, 0.22, 16, 0.012],
-      [0.79, 0.10, 20, 0.009],
-    ] as [number, number, number, number][]
+    [[0.08, 0.20, 18, 0.009], [0.30, 0.14, 22, 0.007], [0.58, 0.22, 16, 0.011], [0.80, 0.12, 20, 0.008]] as number[][]
   ).forEach(([rx, ry, r, spd]) => {
     const cx = ((rx + t * spd) % 1.12) * W;
     const cy = ry * H;
     ctx.beginPath();
-    ctx.arc(cx,             cy,           r,        0, Math.PI * 2);
-    ctx.arc(cx + r * 0.80,  cy - r * 0.35, r * 0.72, 0, Math.PI * 2);
-    ctx.arc(cx - r * 0.55,  cy - r * 0.22, r * 0.58, 0, Math.PI * 2);
+    ctx.arc(cx,            cy,           r,        0, Math.PI * 2);
+    ctx.arc(cx + r * 0.8,  cy - r * 0.3, r * 0.72, 0, Math.PI * 2);
+    ctx.arc(cx - r * 0.55, cy - r * 0.2, r * 0.58, 0, Math.PI * 2);
     ctx.fill();
   });
 
-  // Rolling hills — back layer
-  ctx.fillStyle = '#4D8730';
+  // Hill back layer — darker
+  ctx.fillStyle = '#3B6E28';
   ctx.beginPath();
   ctx.moveTo(-1, groundY);
   for (let x = 0; x <= W + 2; x += 2) {
-    const y =
-      groundY - 14
-      - 10 * Math.sin(x * 0.022 + 1.2)
-      -  6 * Math.sin(x * 0.051 + 2.4);
+    const y = groundY - 16 - 11 * Math.sin(x * 0.021 + 1.2) - 6 * Math.sin(x * 0.050 + 2.4);
     if (x === 0) ctx.moveTo(-1, y); else ctx.lineTo(x, y);
   }
   ctx.lineTo(W + 1, groundY);
   ctx.closePath();
   ctx.fill();
 
-  // Rolling hills — highlight (front ridge)
-  ctx.fillStyle = '#5DAA3C';
+  // Hill front layer — lighter ridge
+  ctx.fillStyle = '#52963C';
   ctx.beginPath();
   ctx.moveTo(-1, groundY);
   for (let x = 0; x <= W + 2; x += 2) {
-    const y =
-      groundY - 6
-      - 4 * Math.sin(x * 0.035 + 0.8)
-      - 3 * Math.sin(x * 0.068 + 1.8);
+    const y = groundY - 7 - 5 * Math.sin(x * 0.034 + 0.8) - 3 * Math.sin(x * 0.067 + 1.8);
     if (x === 0) ctx.moveTo(-1, y); else ctx.lineTo(x, y);
   }
   ctx.lineTo(W + 1, groundY);
   ctx.closePath();
   ctx.fill();
+
+  // Pixel grass tufts along ridge
+  ctx.fillStyle = '#6EBF48';
+  for (let x = 6; x < W - 6; x += 10) {
+    const ridge = groundY - 7 - 5 * Math.sin(x * 0.034 + 0.8);
+    const ry = Math.round(ridge);
+    ctx.fillRect(x,     ry - 2, 1, 2);
+    ctx.fillRect(x + 2, ry - 3, 1, 2);
+    ctx.fillRect(x + 4, ry - 2, 1, 2);
+  }
 
   // Ground line
-  ctx.fillStyle = '#3B6E26';
+  ctx.fillStyle = '#347020';
   ctx.fillRect(0, groundY, W, 3);
 
   // Soil strip
-  ctx.fillStyle = '#7A5230';
+  ctx.fillStyle = '#6B4226';
   ctx.fillRect(0, groundY + 3, W, H - groundY - 3);
 
-  // Soil pebble texture
-  ctx.fillStyle = '#5C3C1E';
-  for (let x = 15; x < W; x += 37) {
-    ctx.fillRect(x,      groundY + 7, 6, 2);
-    ctx.fillRect(x + 20, groundY + 15, 4, 2);
+  // Soil texture (pixel pebbles + root lines)
+  ctx.fillStyle = '#4A2E18';
+  for (let x = 12; x < W; x += 35) {
+    ctx.fillRect(x,      groundY + 7,  6, 2);
+    ctx.fillRect(x + 18, groundY + 14, 4, 2);
+    ctx.fillRect(x + 8,  groundY + 20, 3, 1);
   }
 }
 
 // ─── Draw: cave ───────────────────────────────────────────────────────────────
 
-function drawGlowEye(
-  ctx: CanvasRenderingContext2D,
-  ex: number,
-  ey: number,
-  pulse: number,
-) {
-  const g = ctx.createRadialGradient(ex, ey, 0, ex, ey, 7);
+function drawGlowEye(ctx: CanvasRenderingContext2D, ex: number, ey: number, pulse: number) {
+  const g = ctx.createRadialGradient(ex, ey, 0, ex, ey, 8);
   g.addColorStop(0, `rgba(255,80,0,${0.95 * pulse})`);
   g.addColorStop(1, 'rgba(255,80,0,0)');
   ctx.fillStyle = g;
-  ctx.beginPath();
-  ctx.arc(ex, ey, 7, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = `rgba(255,140,0,${pulse})`;
-  ctx.fillRect(ex - 2, ey - 2, 4, 4);
+  ctx.beginPath(); ctx.arc(ex, ey, 8, 0, Math.PI * 2); ctx.fill();
+  // Pupil slit (FF-style vertical slit)
+  ctx.fillStyle = `rgba(255,180,0,${pulse})`;
+  ctx.fillRect(ex - 1, ey - 3, 2, 6);
+  ctx.fillStyle = '#0D0D0D';
+  ctx.fillRect(ex,     ey - 2, 1, 4);
 }
 
-function drawCave(
-  ctx: CanvasRenderingContext2D,
-  _W: number,
-  H: number,
-  t: number,
-) {
-  const groundY = H - GROUND_OFFSET; // 88
+function drawCave(ctx: CanvasRenderingContext2D, _W: number, H: number, t: number) {
+  const groundY = H - GROUND_OFFSET;
 
-  // Rocky hill body
-  ctx.fillStyle = '#747474';
+  // Rocky hill body — multi-shade for depth
+  // Lightest back layer
+  ctx.fillStyle = '#888888';
   ctx.beginPath();
   ctx.moveTo(-1, groundY + 1);
   ctx.lineTo(-1, groundY - 36);
-  ctx.bezierCurveTo( 6, groundY - 58, 26, groundY - 72, 50, groundY - 68);
+  ctx.bezierCurveTo(6, groundY - 58, 26, groundY - 72, 50, groundY - 68);
   ctx.bezierCurveTo(74, groundY - 64, 92, groundY - 46, 92, groundY + 1);
   ctx.closePath();
   ctx.fill();
 
-  // Left-face shadow
-  ctx.fillStyle = '#565656';
+  // Mid-shade rock face
+  ctx.fillStyle = '#5E5E5E';
   ctx.beginPath();
   ctx.moveTo(-1, groundY + 1);
   ctx.lineTo(-1, groundY - 30);
-  ctx.bezierCurveTo( 5, groundY - 50, 18, groundY - 62, 32, groundY - 60);
+  ctx.bezierCurveTo(5, groundY - 50, 18, groundY - 62, 32, groundY - 60);
   ctx.bezierCurveTo(46, groundY - 57, 54, groundY - 42, 50, groundY + 1);
   ctx.closePath();
   ctx.fill();
 
+  // Pixel rock ledge lines (FF stone texture)
+  ctx.fillStyle = '#3A3A3A';
+  for (let ry = groundY - 52; ry < groundY - 8; ry += 10) {
+    ctx.fillRect(4, ry, 14, 1);
+    ctx.fillRect(6, ry + 5, 8, 1);
+  }
+
   // Hilltop highlight
-  ctx.fillStyle = '#929292';
+  ctx.fillStyle = '#AAAAAA';
   ctx.beginPath();
-  ctx.arc(50, groundY - 66, 9, Math.PI, 0, false);
+  ctx.arc(50, groundY - 66, 10, Math.PI, 0, false);
   ctx.fill();
 
   // Cave entrance — arch
-  // archCX=35, archR=19 → spans x=16..54, top at groundY-22-19=groundY-41=47
   const archCX = 35, archR = 19, archTY = groundY - 22;
   ctx.fillStyle = '#060610';
   ctx.beginPath();
@@ -324,62 +406,140 @@ function drawCave(
   ctx.closePath();
   ctx.fill();
 
-  // Arch stone frame
-  ctx.strokeStyle = '#5A5A5A';
+  // Arch frame — pixel keystone blocks (FF dungeon style)
+  ctx.fillStyle = '#707070';
   ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(archCX - archR, groundY);
-  ctx.lineTo(archCX - archR, archTY);
-  ctx.arc(archCX, archTY, archR, Math.PI, 0, false);
-  ctx.lineTo(archCX + archR, groundY);
-  ctx.stroke();
+  // Left pillar block
+  ctx.fillRect(archCX - archR, archTY - 2, 4, groundY - archTY + 2);
+  // Right pillar block
+  ctx.fillRect(archCX + archR - 4, archTY - 2, 4, groundY - archTY + 2);
 
-  // Glowing eyes (pulsing)
+  // Stalactites hanging from cave ceiling (FF dungeon feel)
+  ctx.fillStyle = '#4A4A4A';
+  const stalOffsets = [22, 30, 39, 46];
+  const stalLengths = [10, 7, 12, 8];
+  stalOffsets.forEach((sx, i) => {
+    const sl = stalLengths[i];
+    ctx.beginPath();
+    ctx.moveTo(sx - 2, archTY - archR + 6);
+    ctx.lineTo(sx + 2, archTY - archR + 6);
+    ctx.lineTo(sx, archTY - archR + 6 + sl);
+    ctx.closePath();
+    ctx.fill();
+    // Highlight edge
+    ctx.fillStyle = '#6A6A6A';
+    ctx.fillRect(sx - 1, archTY - archR + 6, 1, sl - 2);
+    ctx.fillStyle = '#4A4A4A';
+  });
+
+  // Glowing eyes — FF-style slit pupils, pulsing
   const pulse = 0.72 + 0.28 * Math.sin(t * 3.2);
-  drawGlowEye(ctx, 26, groundY - 12, pulse);
-  drawGlowEye(ctx, 40, groundY - 12, pulse);
+  drawGlowEye(ctx, 27, groundY - 12, pulse);
+  drawGlowEye(ctx, 42, groundY - 12, pulse);
 }
 
 // ─── Draw: castle ─────────────────────────────────────────────────────────────
 
-function drawCastle(
+function drawTorches(
   ctx: CanvasRenderingContext2D,
-  W: number,
-  H: number,
+  tx: number,
+  baseY: number,
+  t: number,
+  seed: number,
 ) {
-  const groundY = H - GROUND_OFFSET; // 88
-  const { ltX, ltW, rtX, rtW, wallL, wallR, wallTop, ltTop, rtTop } =
-    castleLayout(W);
+  const flick = 0.7 + 0.3 * Math.sin(t * 9 + seed);
 
-  const stone   = '#B2AA9A';
-  const stoneSh = '#7E7669';
-  const dark    = '#0C0A08';
+  // Torch stick
+  ctx.fillStyle = '#3D2210';
+  ctx.fillRect(tx - 1, baseY - 10, 3, 10);
+  // Torch top (bracket)
+  ctx.fillStyle = '#5A3420';
+  ctx.fillRect(tx - 2, baseY - 11, 5, 2);
 
-  // Helper: draw a tower or wall section with stone-row texture and battlements
-  function drawBlock(x: number, y: number, w: number, h: number, merW = 6, merH = 7, merStep = 8) {
+  // Flame gradient
+  const grad = ctx.createRadialGradient(tx, baseY - 14, 0, tx, baseY - 14, 7 * flick);
+  grad.addColorStop(0,   `rgba(255,235,60,${flick})`);
+  grad.addColorStop(0.4, `rgba(255,120,20,${0.9 * flick})`);
+  grad.addColorStop(1,   'rgba(200,30,0,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.ellipse(tx, baseY - 14, 4 * flick, 7 * flick, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Ambient glow on wall
+  const glow = ctx.createRadialGradient(tx, baseY - 12, 0, tx, baseY - 12, 14 * flick);
+  glow.addColorStop(0, `rgba(255,180,40,${0.18 * flick})`);
+  glow.addColorStop(1, 'rgba(255,120,20,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(tx - 14, baseY - 26, 28, 26);
+}
+
+function drawCastle(ctx: CanvasRenderingContext2D, W: number, H: number, t: number) {
+  const groundY = H - GROUND_OFFSET;
+  const { ltX, ltW, rtX, rtW, wallL, wallR, wallTop, ltTop, rtTop } = castleLayout(W);
+
+  const stone  = '#B8B0A0';
+  const stoneM = '#9A9280';  // mid-shadow
+  const stoneD = '#6E6660';  // dark shadow
+  const dark   = '#0C0A08';
+
+  // ── Helper: draw tower/wall block with FF-style pixel stone texture ──────────
+  function drawBlock(x: number, top: number, w: number, h: number, merH = 7, merStep = 8) {
+    // Main fill
     ctx.fillStyle = stone;
-    ctx.fillRect(x, y, w, h);
-    ctx.fillStyle = stoneSh;
-    for (let sy = y + 8; sy < y + h; sy += 9) ctx.fillRect(x, sy, w, 1);
-    // Battlements (merlons)
+    ctx.fillRect(x, top, w, h);
+
+    // Alternating brick rows (offset every other row — FF dungeon feel)
+    ctx.fillStyle = stoneD;
+    for (let sy = top + 7; sy < top + h; sy += 10) {
+      ctx.fillRect(x, sy, w, 1);
+    }
+    ctx.fillStyle = stoneM;
+    for (let sy = top + 10; sy < top + h; sy += 10) {
+      // Offset brick joints
+      const off = ((sy / 10) | 0) % 2 === 0 ? 0 : 4;
+      for (let bx = x + off; bx < x + w; bx += 8) {
+        ctx.fillRect(bx, sy - 4, 1, 4);
+      }
+    }
+
+    // Right-edge shadow
+    ctx.fillStyle = stoneD;
+    ctx.fillRect(x + w - 2, top, 2, h);
+
+    // Merlons (battlements)
     for (let bx = x; bx < x + w - 2; bx += merStep) {
       ctx.fillStyle = stone;
-      ctx.fillRect(bx, y - merH, merW, merH);
-      ctx.fillStyle = stoneSh;
-      ctx.fillRect(bx, y - merH + 1, merW, 1);
+      ctx.fillRect(bx, top - merH, merH - 1, merH);
+      // Merlon cap highlight
+      ctx.fillStyle = '#D0C8B8';
+      ctx.fillRect(bx, top - merH, merH - 1, 1);
+      // Merlon shadow
+      ctx.fillStyle = stoneD;
+      ctx.fillRect(bx + merH - 2, top - merH, 1, merH);
     }
   }
 
-  // Left tower
-  drawBlock(ltX, ltTop, ltW, groundY - ltTop, 6, 7, 8);
-  // Right tower
-  drawBlock(rtX, rtTop, rtW, groundY - rtTop, 6, 7, 8);
-  // Curtain wall
-  drawBlock(wallL, wallTop, wallR - wallL, groundY - wallTop, 7, 7, 10);
+  // ── Arrow slits (FF castle windows) ─────────────────────────────────────────
+  function drawArrowSlit(x: number, y: number) {
+    ctx.fillStyle = dark;
+    ctx.fillRect(x, y,     2, 8);
+    ctx.fillRect(x - 1, y + 3, 4, 2);
+  }
 
-  // Gate arch
-  const gateMX  = wallL + (wallR - wallL) / 2;
-  const gateHW  = 11;
+  // ── Towers & wall ────────────────────────────────────────────────────────────
+  drawBlock(ltX, ltTop, ltW, groundY - ltTop, 6, 7);
+  drawBlock(rtX, rtTop, rtW, groundY - rtTop, 6, 7);
+  drawBlock(wallL, wallTop, wallR - wallL, groundY - wallTop, 7, 10);
+
+  // Arrow slits on towers
+  drawArrowSlit(ltX + 8, ltTop + 8);
+  drawArrowSlit(rtX + 8, rtTop + 8);
+  drawArrowSlit(rtX + 8, rtTop + 22);
+
+  // ── Gate arch ────────────────────────────────────────────────────────────────
+  const gateMX = wallL + (wallR - wallL) / 2;
+  const gateHW = 11;
   const gateArcCY = groundY - 18;
 
   ctx.fillStyle = dark;
@@ -391,7 +551,14 @@ function drawCastle(
   ctx.closePath();
   ctx.fill();
 
-  ctx.strokeStyle = stoneSh;
+  // Portcullis bars (horizontal lines = iron bars hint)
+  ctx.fillStyle = 'rgba(80,60,40,0.55)';
+  for (let py = gateArcCY - gateHW + 4; py < groundY; py += 4) {
+    ctx.fillRect(gateMX - gateHW + 2, py, (gateHW - 2) * 2, 1);
+  }
+
+  // Gate surround (keystone blocks)
+  ctx.strokeStyle = stoneM;
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(gateMX - gateHW, groundY);
@@ -400,66 +567,64 @@ function drawCastle(
   ctx.lineTo(gateMX + gateHW, groundY);
   ctx.stroke();
 
-  // Flag on right tower
-  const flagPX   = rtX + rtW / 2;
-  const flagBase = rtTop - 7;        // top of battlement
+  // Torches flanking gate
+  drawTorches(ctx, gateMX - gateHW - 8, wallTop, t, 0);
+  drawTorches(ctx, gateMX + gateHW + 8, wallTop, t, 2.1);
 
-  ctx.strokeStyle = '#3D2210';
+  // ── Flag ─────────────────────────────────────────────────────────────────────
+  const flagPX   = rtX + rtW / 2;
+  const flagBase = rtTop - 7;
+
+  ctx.strokeStyle = '#2A1408';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
   ctx.moveTo(flagPX, flagBase);
-  ctx.lineTo(flagPX, flagBase - 20);
+  ctx.lineTo(flagPX, flagBase - 22);
   ctx.stroke();
 
+  // Banner cloth with wave
+  const wave = 2 * Math.sin(t * 3);
   ctx.fillStyle = '#CC2222';
   ctx.beginPath();
-  ctx.moveTo(flagPX,      flagBase - 20);
-  ctx.lineTo(flagPX + 14, flagBase - 14);
-  ctx.lineTo(flagPX,      flagBase - 8);
+  ctx.moveTo(flagPX,      flagBase - 22);
+  ctx.lineTo(flagPX + 14 + wave, flagBase - 16);
+  ctx.lineTo(flagPX + 12, flagBase - 10);
+  ctx.lineTo(flagPX, flagBase - 8);
   ctx.closePath();
   ctx.fill();
+  // Flag cross emblem (FF holy symbol)
+  ctx.fillStyle = '#FFEEAA';
+  ctx.fillRect(flagPX + 4, flagBase - 20, 2, 8);
+  ctx.fillRect(flagPX + 2, flagBase - 16, 6, 2);
 }
 
 // ─── Draw: monsters ───────────────────────────────────────────────────────────
 
 function drawMonsters(
-  ctx: CanvasRenderingContext2D,
-  W: number,
-  H: number,
-  t: number,
-  cards: CardInfo[],
+  ctx: CanvasRenderingContext2D, W: number, H: number, t: number, cards: CardInfo[],
 ) {
   const groundY = H - GROUND_OFFSET;
   const { castleL } = castleLayout(W);
 
-  const caveExitX       = 60;
-  const castleApproachX = castleL - 14;   // just left of castle
+  const caveExitX       = 62;
+  const castleApproachX = castleL - 18;
 
   const active = cards
     .filter((c) => !c.archived_at)
-    .map((c) => ({
-      id:      c.id,
-      priority: c.priority,
-      end_date: c.end_date,
-      urgency: cardUrgency(c.end_date),
-      hash:    hashStr(c.id),
-    }))
+    .map((c) => ({ ...c, urgency: cardUrgency(c.end_date), hash: hashStr(c.id) }))
     .sort((a, b) => b.urgency - a.urgency)
     .slice(0, 24);
 
   active.forEach((card) => {
     const u    = card.urgency;
     const rawX = caveExitX + (castleApproachX - caveExitX) * u;
-    // Per-card X jitter so they don't stack perfectly
     const jitter = ((card.hash % 42) - 21) * 0.20;
-    const mx   = Math.min(
-      Math.max(rawX + jitter, caveExitX - 4),
-      castleApproachX + 4,
-    );
+    const mx   = Math.min(Math.max(rawX + jitter, caveExitX - 4), castleApproachX + 4);
 
-    // Gentle bouncing bob (each card has a unique phase)
+    // Bob — heavier bounce for dragon, lighter for slime
     const phase = (card.hash % 628) / 100;
-    const bob   = -Math.abs(Math.sin(t * 2.6 + phase)) * 3;
+    const bobAmp = card.priority === 'critical' ? 2 : 3;
+    const bob = -Math.abs(Math.sin(t * 2.6 + phase)) * bobAmp;
 
     const type = cardToMonsterType(card.priority);
     const spr  = SPRITES[type] ?? SLIME;
@@ -473,52 +638,44 @@ function drawMonsters(
 // ─── Draw: castle guards (member avatars) ─────────────────────────────────────
 
 function drawGuards(
-  ctx: CanvasRenderingContext2D,
-  W: number,
-  H: number,
-  members: MemberInfo[],
+  ctx: CanvasRenderingContext2D, W: number, H: number, members: MemberInfo[],
 ) {
   const groundY = H - GROUND_OFFSET;
   const { wallL, wallR, wallTop } = castleLayout(W);
 
-  const avatarH = 8 * S; // 16 CSS px
-  const maxGuards = Math.max(1, Math.floor((wallR - wallL) / 16));
+  const avatarH   = 16 * S;  // 32 CSS px
+  const maxGuards = Math.max(1, Math.floor((wallR - wallL) / 18));
   const guards    = members.slice(0, maxGuards);
-  if (guards.length === 0) return;
+  if (!guards.length) return;
 
   const step = guards.length > 1 ? (wallR - wallL) / guards.length : wallR - wallL;
-  const gy   = wallTop - avatarH; // feet at wallTop, head sticking above
+  const gy   = wallTop - avatarH;
 
   guards.forEach((m, i) => {
-    const gx   = wallL + i * step + step / 2 - (5 * S) / 2;
+    const gx   = wallL + i * step + step / 2 - (8 * S) / 2;
     const arch = (m.user?.avatar as { archetype?: string } | undefined)?.archetype;
-    const col  = ARCHETYPE_COL[arch ?? ''] ?? '#A8B8C8';
+    const col  = ARCHETYPE_COL[arch ?? ''] ?? '#C0C8D0';
     blit(ctx, makeAvatar(col), Math.round(gx), Math.round(gy), S);
   });
 
-  void groundY; // used implicitly via wallTop derivation
+  void groundY;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 interface QuestBannerProps {
-  /** Pass boardId on the board page to use real data; omit for demo mode. */
   boardId?: string;
 }
 
 export function QuestBanner({ boardId }: QuestBannerProps) {
   const { enabled, setEnabled } = useQuestStore();
 
-  // Data
-  const boardCards  = useBoardStore((s) => s.cards);
+  const boardCards = useBoardStore((s) => s.cards);
   const { data: realMembers = [] } = useBoardMembers(boardId ?? '');
 
   const cards = useMemo<CardInfo[]>(() => {
     if (!boardId) return DEMO_CARDS;
-    return Object.values(boardCards)
-      .flat()
-      .filter((c) => !c.archived_at)
-      .slice(0, 30) as CardInfo[];
+    return Object.values(boardCards).flat().filter((c) => !c.archived_at).slice(0, 30) as CardInfo[];
   }, [boardId, boardCards]);
 
   const members = useMemo<MemberInfo[]>(() => {
@@ -526,22 +683,18 @@ export function QuestBanner({ boardId }: QuestBannerProps) {
     return realMembers as unknown as MemberInfo[];
   }, [boardId, realMembers]);
 
-  // Canvas refs
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const widthRef     = useRef(0);
   const cardsRef     = useRef(cards);
   const membersRef   = useRef(members);
 
-  // Keep refs in sync with latest data without restarting the loop
   useEffect(() => { cardsRef.current  = cards;   }, [cards]);
   useEffect(() => { membersRef.current = members; }, [members]);
 
-  // ResizeObserver — update canvas pixel dimensions
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-
     function resize(w: number) {
       const canvas = canvasRef.current;
       if (!canvas) return;
@@ -550,63 +703,47 @@ export function QuestBanner({ boardId }: QuestBannerProps) {
       canvas.width  = Math.round(w * dpr);
       canvas.height = Math.round(BANNER_H * dpr);
     }
-
     resize(el.getBoundingClientRect().width);
     const ro = new ResizeObserver((es) => resize(es[0].contentRect.width));
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
-  // Animation loop — restarts only when enabled changes
   useEffect(() => {
     if (!enabled) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const t0 = performance.now();
     let id: number;
-
     const frame = (now: number) => {
       const t   = (now - t0) / 1000;
       const ctx = canvas.getContext('2d');
       const W   = widthRef.current;
-
       if (!ctx || W < 10) { id = requestAnimationFrame(frame); return; }
-
       const dpr = window.devicePixelRatio || 1;
-      const H   = BANNER_H;
-
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.save();
       ctx.scale(dpr, dpr);
-
       if (W >= 300) {
-        drawBackground(ctx, W, H, t);
-        drawCave(ctx, W, H, t);
-        drawCastle(ctx, W, H);
-        drawMonsters(ctx, W, H, t, cardsRef.current);
-        drawGuards(ctx, W, H, membersRef.current);
+        drawBackground(ctx, W, BANNER_H, t);
+        drawCave(ctx, W, BANNER_H, t);
+        drawCastle(ctx, W, BANNER_H, t);
+        drawMonsters(ctx, W, BANNER_H, t, cardsRef.current);
+        drawGuards(ctx, W, BANNER_H, membersRef.current);
       } else {
-        // Very narrow — just sky
-        ctx.fillStyle = '#2A6AB8';
-        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#1A3A6A';
+        ctx.fillRect(0, 0, W, BANNER_H);
       }
-
       ctx.restore();
       id = requestAnimationFrame(frame);
     };
-
     id = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(id);
   }, [enabled]);
 
-  /* ── Disabled state: render the original placeholder bar ── */
   if (!enabled) {
     return (
-      <div
-        className="h-10 flex-shrink-0 border-b border-[var(--color-border)]"
-        aria-hidden="true"
-      />
+      <div className="h-10 flex-shrink-0 border-b border-[var(--color-border)]" aria-hidden="true" />
     );
   }
 
@@ -619,14 +756,8 @@ export function QuestBanner({ boardId }: QuestBannerProps) {
     >
       <canvas
         ref={canvasRef}
-        style={{
-          width: '100%',
-          height: BANNER_H,
-          display: 'block',
-          imageRendering: 'pixelated',
-        }}
+        style={{ width: '100%', height: BANNER_H, display: 'block', imageRendering: 'pixelated' }}
       />
-      {/* Dismiss button — faint, top-right corner */}
       <button
         onClick={() => setEnabled(false)}
         className="absolute top-1 right-1.5 w-5 h-5 flex items-center justify-center rounded text-white/25 hover:text-white/70 hover:bg-black/20 transition-colors text-[9px] font-bold leading-none"
