@@ -1,15 +1,25 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { toast } from 'sonner';
 import { useNavigate, Link } from 'react-router-dom';
-import { registerSchema, type RegisterInput, type HeroArchetype } from '@questboard/shared';
+import { registerSchema, type HeroArchetype } from '@questboard/shared';
 import { register as registerUser } from '@/api/auth.api';
 import { useAuthStore } from '@/stores/auth.store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AvatarPicker } from './AvatarPicker';
+
+// Extend the shared schema with frontend-only confirmPassword validation
+const registerFormSchema = registerSchema
+  .extend({ confirmPassword: z.string().min(1, 'Please confirm your password') })
+  .refine((d) => d.password === d.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  });
+type RegisterFormInput = z.infer<typeof registerFormSchema>;
 
 export function RegisterForm() {
   const navigate = useNavigate();
@@ -21,8 +31,8 @@ export function RegisterForm() {
     handleSubmit,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<RegisterInput>({
-    resolver: zodResolver(registerSchema),
+  } = useForm<RegisterFormInput>({
+    resolver: zodResolver(registerFormSchema),
   });
 
   const handleArchetypeChange = (archetype: HeroArchetype) => {
@@ -30,9 +40,11 @@ export function RegisterForm() {
     setValue('avatar_archetype', archetype);
   };
 
-  const onSubmit = async (data: RegisterInput) => {
+  const onSubmit = async (data: RegisterFormInput) => {
     try {
-      const { accessToken, user } = await registerUser(data);
+      // Strip confirmPassword before sending to the API
+      const { confirmPassword: _, ...apiData } = data;
+      const { accessToken, user } = await registerUser(apiData);
       setAuth(accessToken, user);
       toast.success(`Welcome to QuestBoard, ${user.name}!`);
       navigate('/boards');
@@ -78,6 +90,18 @@ export function RegisterForm() {
           autoComplete="new-password"
           error={errors.password?.message}
           {...register('password')}
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="confirmPassword">Confirm Password</Label>
+        <Input
+          id="confirmPassword"
+          type="password"
+          placeholder="Re-enter your password"
+          autoComplete="new-password"
+          error={errors.confirmPassword?.message}
+          {...register('confirmPassword')}
         />
       </div>
 
