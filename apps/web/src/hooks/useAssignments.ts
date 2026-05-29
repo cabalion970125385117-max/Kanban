@@ -69,14 +69,21 @@ export function useMarkAllNotificationsRead() {
   });
 }
 
-export function useIssueCard(boardId: string) {
+export function useIssueCard() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ title, assigneeId }: { title: string; assigneeId: string }) =>
-      issueCard(boardId, title, assigneeId),
-    onSuccess: () => {
+    mutationFn: ({
+      boardId,
+      title,
+      assigneeId,
+    }: {
+      boardId: string;
+      title: string;
+      assigneeId: string;
+    }) => issueCard(boardId, title, assigneeId),
+    onSuccess: (_result, { boardId }) => {
+      // Invalidate the target board's card cache (may differ from current board)
       qc.invalidateQueries({ queryKey: ['cards', boardId] });
-      // Broad invalidation covers the assignee's cross-board query key too
       qc.invalidateQueries({ queryKey: ['assignments'] });
       qc.invalidateQueries({ queryKey: ['inbox-notifications'] });
     },

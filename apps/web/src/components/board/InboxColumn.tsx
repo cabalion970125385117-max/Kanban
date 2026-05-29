@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Inbox, Check, X, Send, ChevronDown, ChevronUp,
-  Flag, RefreshCw, Bell, BellOff, History, CheckCheck,
+  Flag, RefreshCw, Bell, BellOff, History, CheckCheck, LayoutGrid,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useBoardMembers } from '@/hooks/useBoard';
+import { useBoards, useBoardMembers } from '@/hooks/useBoard';
 import {
   useMyAssignments,
   useRejectedAssignments,
@@ -48,9 +48,15 @@ export function InboxColumn({ boardId }: InboxColumnProps) {
   const { data: assignments = [], isLoading: loadingAssignments } = useMyAssignments();
   const { data: rejected = [] } = useRejectedAssignments();
   const { data: notifications = [] } = useInboxNotifications();
-  const { data: members = [] } = useBoardMembers(boardId);
+  const { data: boards = [] } = useBoards();
 
-  const issueCard = useIssueCard(boardId);
+  // Issue-card target board (defaults to current board)
+  const [issueBoard, setIssueBoard] = useState(boardId);
+
+  // Load members of the selected board for the assignee dropdown
+  const { data: issueBoardMembers = [] } = useBoardMembers(issueBoard);
+
+  const issueCard = useIssueCard();
   const accept = useAcceptAssignment();
   const reject = useRejectAssignment();
   const markRead = useMarkNotificationRead();
@@ -63,24 +69,28 @@ export function InboxColumn({ boardId }: InboxColumnProps) {
   const [issueAssignee, setIssueAssignee] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const otherMembers = members.filter((m) => m.user_id !== currentUser?.id);
+  // Reset assignee when the target board changes
+  useEffect(() => {
+    setIssueAssignee('');
+  }, [issueBoard]);
+
+  const otherMembers = issueBoardMembers.filter((m) => m.user_id !== currentUser?.id);
   const unreadCount = notifications.filter((n) => !n.is_read).length;
   const totalBadge = assignments.length + unreadCount;
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await Promise.all([
-      qc.invalidateQueries({ queryKey: ['assignments', boardId] }),
-      qc.invalidateQueries({ queryKey: ['assignments-rejected', boardId] }),
+      qc.invalidateQueries({ queryKey: ['assignments'] }),
       qc.invalidateQueries({ queryKey: ['inbox-notifications'] }),
     ]);
     setTimeout(() => setIsRefreshing(false), 600);
   };
 
   const handleIssue = () => {
-    if (!issueTitle.trim() || !issueAssignee) return;
+    if (!issueTitle.trim() || !issueAssignee || !issueBoard) return;
     issueCard.mutate(
-      { title: issueTitle.trim(), assigneeId: issueAssignee },
+      { boardId: issueBoard, title: issueTitle.trim(), assigneeId: issueAssignee },
       {
         onSuccess: () => {
           setIssueTitle('');
@@ -309,6 +319,25 @@ export function InboxColumn({ boardId }: InboxColumnProps) {
 
           {issueOpen && (
             <div className="space-y-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
+
+              {/* Board picker */}
+              <div>
+                <label className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide flex items-center gap-1">
+                  <LayoutGrid className="h-3 w-3" /> Board
+                </label>
+                <select
+                  value={issueBoard}
+                  onChange={(e) => setIssueBoard(e.target.value)}
+                  className="mt-1 w-full text-sm border border-[var(--color-border)] rounded-md px-2.5 py-1.5 bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+                >
+                  {boards.filter((b) => !b.archived_at).map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.id === boardId ? `${b.name} (current)` : b.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {otherMembers.length === 0 ? (
                 <p className="text-xs text-[var(--color-text-muted)]">
                   No other members on this board yet.
