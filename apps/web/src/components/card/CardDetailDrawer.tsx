@@ -120,7 +120,7 @@ export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emit
             ) : (
               <h2
                 onClick={() => setEditingTitle(true)}
-                className="text-base font-semibold text-[var(--color-text)] cursor-pointer hover:bg-gray-50 rounded px-1 -mx-1 py-0.5"
+                className="text-base font-semibold text-[var(--color-text)] cursor-pointer hover:bg-[var(--color-bg)] rounded px-1 -mx-1 py-0.5"
               >
                 {card.title}
               </h2>
@@ -285,7 +285,7 @@ export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emit
             ) : (
               <div
                 onClick={() => setEditingDesc(true)}
-                className="min-h-[64px] text-sm text-[var(--color-text)] bg-gray-50 rounded px-3 py-2 cursor-pointer hover:bg-gray-100"
+                className="min-h-[64px] text-sm text-[var(--color-text)] bg-[var(--color-bg)] rounded px-3 py-2 cursor-pointer hover:bg-[var(--color-border)]/30"
               >
                 {card.description || (
                   <span className="text-[var(--color-text-muted)]">Add a description…</span>
@@ -317,28 +317,6 @@ export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emit
                   >
                     {label.name}
                   </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Assignees */}
-          {card.owners && card.owners.length > 0 && (
-            <div className="border-t border-[var(--color-border)] pt-4">
-              <label className="text-xs font-medium text-[var(--color-text-muted)] mb-2 block">Assignees</label>
-              <div className="flex flex-wrap gap-2">
-                {card.owners.map((owner) => (
-                  <div
-                    key={owner.id}
-                    className="flex items-center gap-1.5 bg-gray-100 rounded-full pl-0.5 pr-2.5 py-0.5"
-                  >
-                    <div className="w-5 h-5 rounded-full bg-[var(--color-accent)] flex items-center justify-center">
-                      <span className="text-[9px] text-white font-bold">
-                        {owner.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <span className="text-xs font-medium">{owner.name}</span>
-                  </div>
                 ))}
               </div>
             </div>

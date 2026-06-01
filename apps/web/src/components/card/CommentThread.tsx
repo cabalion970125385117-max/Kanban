@@ -113,11 +113,11 @@ export function CommentThread({ cardId, boardId }: CommentThreadProps) {
     const trimmed = body.trim();
     if (!trimmed) return;
 
-    // Find mentioned users
-    const mentionedNames = [...trimmed.matchAll(/@(\S+)/g)].map((m) => m[1].toLowerCase());
+    // Find mentioned users — use full-string search so multi-word names work
     const mentionedIds = members
-      .filter((m) => mentionedNames.includes((m.user?.name ?? '').toLowerCase()))
-      .map((m) => m.user_id);
+      .filter((m) => m.user?.name && trimmed.includes(`@${m.user.name}`))
+      .map((m) => m.user_id)
+      .filter((id) => id !== currentUser?.id);
 
     create.mutate(
       { body: trimmed },

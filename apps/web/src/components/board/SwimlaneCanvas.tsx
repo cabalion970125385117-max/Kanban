@@ -69,6 +69,7 @@ function CardMini({ card, onClick }: { card: Card; onClick: (c: Card) => void })
 }
 
 export function SwimlaneCanvas({ onCardClick, filters, groupBy }: SwimlaneCanvasProps) {
+  // boardId reserved for future server-side swimlane data
   const { columns, cards } = useBoardStore();
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 

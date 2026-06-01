@@ -89,7 +89,7 @@ export function BoardDeleteDialog({
                 onChange={(e) => setConfirmed(e.target.value)}
                 placeholder={board.name}
                 className={cn(
-                  'w-full text-sm border rounded-lg px-3 py-2 outline-none transition-colors bg-white',
+                  'w-full text-sm border rounded-lg px-3 py-2 outline-none transition-colors bg-[var(--color-surface)]',
                   canDelete && confirmed
                     ? 'border-red-400 focus:border-red-500'
                     : 'border-red-200 focus:border-red-400',
