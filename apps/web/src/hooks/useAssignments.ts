@@ -9,7 +9,11 @@ import {
   issueCard,
   acceptAssignment,
   rejectAssignment,
+  getIssuedByMe,
+  withdrawAssignment,
+  updateIssuedCard,
 } from '@/api/assignments.api';
+import type { Priority } from '@questboard/shared';
 import { useAuthStore } from '@/stores/auth.store';
 
 // ── helpers ────────────────────────────────────────────────────────────────────
@@ -104,6 +108,43 @@ export function useAcceptAssignment() {
     onError: (err: Error) => {
       toast.error(err.message ?? 'Failed to accept assignment');
     },
+  });
+}
+
+// ── Issued-by-me ─────────────────────────────────────────────────────────────
+
+export function useIssuedByMe() {
+  const userId = useAuthStore((s) => s.user?.id);
+  return useQuery({
+    queryKey: ['issued-by-me', userId],
+    queryFn: () => getIssuedByMe(),
+    enabled: !!userId,
+  });
+}
+
+export function useWithdrawAssignment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (assignmentId: string) => withdrawAssignment(assignmentId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['issued-by-me'] });
+      qc.invalidateQueries({ queryKey: ['inbox-notifications'] });
+      toast.success('Card withdrawn');
+    },
+    onError: () => toast.error('Failed to withdraw card'),
+  });
+}
+
+export function useUpdateIssuedCard() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: { title?: string; priority?: Priority } }) =>
+      updateIssuedCard(id, patch),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['issued-by-me'] });
+      toast.success('Card updated');
+    },
+    onError: () => toast.error('Failed to update card'),
   });
 }
 

@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { VersionBadge } from '@/components/shared/VersionBadge';
 import { BoardDeleteDialog } from '@/components/board/BoardDeleteDialog';
+import { IssuedCardsSidebar } from '@/components/boards/IssuedCardsSidebar';
 import { useBoards, useCreateBoard, useArchiveBoard, usePermanentlyDeleteBoard, useBoardCardCount } from '@/hooks/useBoard';
 import type { Board, UserRole } from '@questboard/shared';
 
@@ -158,8 +159,9 @@ export function BoardsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)]">
-      <header className="bg-[var(--color-primary)] text-white px-6 py-4 flex items-center justify-between shadow-md">
+    <div className="h-screen flex flex-col bg-[var(--color-bg)] overflow-hidden">
+      {/* ── Header ── */}
+      <header className="bg-[var(--color-primary)] text-white px-6 py-4 flex items-center justify-between shadow-md flex-shrink-0">
         <div className="flex items-center gap-3">
           <span className="text-2xl">{'⚔️'}</span>
           <span className="font-bold text-lg tracking-wide">QuestBoard</span>
@@ -182,68 +184,79 @@ export function BoardsPage() {
         </div>
       </header>
 
+      {/* ── Quest Banner slot ── */}
       <div className="h-10 flex-shrink-0 border-b border-[var(--color-border)]" aria-hidden="true" />
 
-      <main id="main-content" className="max-w-5xl mx-auto px-6 py-10">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-2xl font-bold text-[var(--color-primary)]">Your Boards</h2>
-            <p className="text-[var(--color-text-muted)] text-sm mt-1">
-              {boards?.length ?? 0} {boards?.length === 1 ? 'board' : 'boards'}
-            </p>
-          </div>
-          <Button onClick={() => setCreating(true)}>
-            <Plus className="h-4 w-4 mr-1" />New Board
-          </Button>
-        </div>
+      {/* ── Body: main content + right sidebar ── */}
+      <div className="flex flex-1 overflow-hidden">
 
-        {creating && (
-          <div className="bg-[var(--color-surface)] border border-[var(--color-accent)]/30 rounded-xl p-5 mb-6 shadow-sm">
-            <h3 className="font-semibold mb-3 text-[var(--color-primary)]">Create a board</h3>
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <Input
-                  autoFocus
-                  placeholder="Board name…"
-                  value={boardName}
-                  onChange={(e) => { setBoardName(e.target.value); if (boardNameError) setBoardNameError(''); }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') submitBoard();
-                    if (e.key === 'Escape') { setCreating(false); setBoardName(''); setBoardNameError(''); }
-                  }}
-                  className={boardNameError ? 'border-[var(--color-danger)]' : ''}
-                />
-                {boardNameError && <p className="text-xs text-[var(--color-danger)] mt-1">{boardNameError}</p>}
+        {/* ── Main boards area ── */}
+        <main id="main-content" className="flex-1 overflow-y-auto px-6 py-8">
+          <div className="max-w-3xl mx-auto">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-2xl font-bold text-[var(--color-primary)]">Your Boards</h2>
+                <p className="text-[var(--color-text-muted)] text-sm mt-1">
+                  {boards?.length ?? 0} {boards?.length === 1 ? 'board' : 'boards'}
+                </p>
               </div>
-              <Button onClick={submitBoard} loading={createBoard.isPending}>Create</Button>
-              <Button variant="ghost" onClick={() => { setCreating(false); setBoardName(''); }}>Cancel</Button>
+              <Button onClick={() => setCreating(true)}>
+                <Plus className="h-4 w-4 mr-1" />New Board
+              </Button>
             </div>
-          </div>
-        )}
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((n) => <div key={n} className="h-32 skeleton" />)}
+            {creating && (
+              <div className="bg-[var(--color-surface)] border border-[var(--color-accent)]/30 rounded-xl p-5 mb-6 shadow-sm">
+                <h3 className="font-semibold mb-3 text-[var(--color-primary)]">Create a board</h3>
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <Input
+                      autoFocus
+                      placeholder="Board name…"
+                      value={boardName}
+                      onChange={(e) => { setBoardName(e.target.value); if (boardNameError) setBoardNameError(''); }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') submitBoard();
+                        if (e.key === 'Escape') { setCreating(false); setBoardName(''); setBoardNameError(''); }
+                      }}
+                      className={boardNameError ? 'border-[var(--color-danger)]' : ''}
+                    />
+                    {boardNameError && <p className="text-xs text-[var(--color-danger)] mt-1">{boardNameError}</p>}
+                  </div>
+                  <Button onClick={submitBoard} loading={createBoard.isPending}>Create</Button>
+                  <Button variant="ghost" onClick={() => { setCreating(false); setBoardName(''); }}>Cancel</Button>
+                </div>
+              </div>
+            )}
+
+            {isLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[1, 2, 3].map((n) => <div key={n} className="h-32 skeleton rounded-xl" />)}
+              </div>
+            ) : boards && boards.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {boards.map((board) => (
+                  <BoardCard
+                    key={board.id}
+                    board={board}
+                    onClick={() => navigate(`/boards/${board.id}`)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-24">
+                <div className="text-6xl mb-6">{'🏰'}</div>
+                <h3 className="text-xl font-bold text-[var(--color-primary)] mb-2">No boards yet</h3>
+                <p className="text-[var(--color-text-muted)] mb-8">Create your first board to get started.</p>
+                <Button onClick={() => setCreating(true)}><Plus className="h-4 w-4 mr-1" />New Board</Button>
+              </div>
+            )}
           </div>
-        ) : boards && boards.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {boards.map((board) => (
-              <BoardCard
-                key={board.id}
-                board={board}
-                onClick={() => navigate(`/boards/${board.id}`)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-24">
-            <div className="text-6xl mb-6">{'🏰'}</div>
-            <h3 className="text-xl font-bold text-[var(--color-primary)] mb-2">No boards yet</h3>
-            <p className="text-[var(--color-text-muted)] mb-8">Create your first board to get started.</p>
-            <Button onClick={() => setCreating(true)}><Plus className="h-4 w-4 mr-1" />New Board</Button>
-          </div>
-        )}
-      </main>
+        </main>
+
+        {/* ── Issued Cards sidebar ── */}
+        <IssuedCardsSidebar />
+      </div>
     </div>
   );
 }

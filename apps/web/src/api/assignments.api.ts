@@ -9,6 +9,12 @@ export interface AssignmentWithCard {
   boardName: string;
 }
 
+export interface IssuedCard {
+  assignment: CardAssignmentRow;
+  assignee: { id: string; name: string };
+  boardName: string;
+}
+
 export interface InboxNotification extends NotificationRow {
   senderName?: string;
 }
@@ -181,6 +187,82 @@ export async function acceptAssignment(assignmentId: string): Promise<{ cardId: 
   }
 
   return { cardId, boardId: a.board_id };
+}
+
+// ── Issued-by-me (outbox view) ────────────────────────────────────────────────
+
+/** All pending assignments the current user has issued to others. */
+export async function getIssuedByMe(): Promise<IssuedCard[]> {
+  const db = await getDB();
+  const issuerId = currentUserId();
+  // No IDB index on assigned_by_id — scan all and filter (dataset is small)
+  const all = await db.getAll('card_assignments');
+  const pending = all.filter(
+    (a) => a.assigned_by_id === issuerId && a.status === 'pending',
+  );
+  pending.sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  );
+
+  const results: IssuedCard[] = [];
+  for (const a of pending) {
+    const assignee = await db.get('users', a.user_id);
+    if (!assignee) continue;
+    const board = await db.get('boards', a.board_id);
+    results.push({
+      assignment: a,
+      assignee: { id: assignee.id, name: assignee.name },
+      boardName: board?.name ?? 'Unknown board',
+    });
+  }
+  return results;
+}
+
+/** Withdraw a pending issued card (deletes the assignment and cleans up notification). */
+export async function withdrawAssignment(assignmentId: string): Promise<void> {
+  const db = await getDB();
+  const a = await db.get('card_assignments', assignmentId);
+  if (!a || a.status !== 'pending') return;
+
+  // Mark any related unread notification for the assignee as read
+  const assigneeNotifs = await db.getAllFromIndex('notifications', 'by-user', a.user_id);
+  for (const n of assigneeNotifs) {
+    if (!n.is_read && n.message.includes(a.card_title)) {
+      await db.put('notifications', { ...n, is_read: true });
+    }
+  }
+
+  await db.delete('card_assignments', assignmentId);
+}
+
+/** Edit the title and/or priority of a pending issued card. */
+export async function updateIssuedCard(
+  assignmentId: string,
+  patch: { title?: string; priority?: import('@questboard/shared').Priority },
+): Promise<void> {
+  const db = await getDB();
+  const a = await db.get('card_assignments', assignmentId);
+  if (!a || a.status !== 'pending') return;
+
+  const updated: CardAssignmentRow = {
+    ...a,
+    card_title:    patch.title    ? patch.title.trim() : a.card_title,
+    card_priority: patch.priority ?? a.card_priority,
+  };
+  await db.put('card_assignments', updated);
+
+  // Update the assignee's unread notification message so it stays accurate
+  if (patch.title) {
+    const assigneeNotifs = await db.getAllFromIndex('notifications', 'by-user', a.user_id);
+    for (const n of assigneeNotifs) {
+      if (!n.is_read && n.message.includes(a.card_title)) {
+        await db.put('notifications', {
+          ...n,
+          message: n.message.replace(a.card_title, updated.card_title),
+        });
+      }
+    }
+  }
 }
 
 export async function rejectAssignment(assignmentId: string): Promise<void> {
