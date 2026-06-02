@@ -69,126 +69,141 @@ function blit(
   });
 }
 
-// ─── FF-style Sprites ─────────────────────────────────────────────────────────
-// Every sprite: K=#0D0D0D outline, 3-4 shaded body colours, white eye highlights.
-// Row widths are verified equal within each sprite.
+// ─── Custom Sprites ───────────────────────────────────────────────────────────
+// K = #0D0D0D hard outline on every sprite.
+// Each sprite uses 3–4 shaded tones + highlight for a hand-crafted pixel look.
+// Row widths are character-verified equal within each sprite.
 
-// Slime — 8 wide × 8 tall → 16 × 16 CSS px
-// Blue gelatinous blob with shine and glassy eyes
+// ── SLIME — 8 × 8 → 16 × 16 CSS px ─────────────────────────────────────────
+// Poisonous green blob with glassy slit eyes and belly shadow.
 const SLIME: Sprite = sp(
   [
-    '.KKKKKK.',  // top arc
-    'KccccccK',  // body
-    'KchhcmmK',  // h=shine, m=shadow
-    'KcccccmK',
-    'KcoKcoKK',  // o=eye-white, K=pupil; right edge shadow
-    'KccmmKK.',  // bottom shadow
-    '.KddKK..',  // d=dark base
+    '.KKKKKK.',
+    'KggggggK',
+    'KgHgggmK',   // H=bright top-left highlight, m=right shadow
+    'KggggmmK',
+    'KgoKgoKK',   // o=pale eye-white, K=slit pupil
+    'KggmmKK.',
+    '.KddKK..',   // d=dark underbelly drip
     '........',
   ],
-  { K: '#0D0D0D', c: '#44CCFF', h: '#AAEEFF', m: '#1B8FC4', d: '#0D5A7A', o: '#FFFFFF' },
+  { K: '#0D0D0D', g: '#22CC44', H: '#88FF88', m: '#117733', d: '#084422', o: '#DDFFDD' },
 );
 
-// Goblin — 8 wide × 14 tall → 16 × 28 CSS px
-// Green-skinned imp with leather armour and yellow eyes
+// ── GOBLIN — 8 × 14 → 16 × 28 CSS px ────────────────────────────────────────
+// Hooded shadow-assassin. Dark cowl, glowing yellow eyes, leather armour.
 const GOBLIN: Sprite = sp(
   [
-    '.K....K.',  // ear/horn tips
-    '.KGGGGK.',  // head
-    'KGGoKoGK',  // o=eye-white, K=pupil
-    'KGKssKGK',  // K=nostril shadow, s=dark-skin crease
-    'KGttttGK',  // t=teeth
-    '.KBBBBK.',  // B=leather armour
+    '..KKKK..',   // hood peak
+    '.KddddK.',   // d=dark hood fabric
+    '.KdGGdK.',   // G=green skin peeking out
+    'KdGYKYdK',   // Y=yellow glowing eyes
+    '.KdGGdK.',   // lower face / jaw
+    '.KBBBBK.',   // B=worn leather armour
+    'KBBaBBBK',   // a=armour highlight stripe
     'KBBBBBBK',
-    'KBBaBBBK',  // a=armour highlight
-    '.KBBBBK.',  // waist
-    '.KGGKGGK',  // G=green legs
-    '.KGGKGGK',
-    '.KBBKBBK',  // B=boots (re-use leather)
-    '.KBBKBBK',
+    '.KbKKbK.',   // b=belt strap
+    '..KGKGK.',   // green thighs
+    '..KGKgK.',   // g=darker shin shadow
+    '..KsKsK.',   // s=dark leather boots
+    '..KsKsK.',
     '........',
   ],
-  { K: '#0D0D0D', G: '#55AA33', o: '#FFFFFF', s: '#2A7015', t: '#E8E8CC', B: '#7A4E18', a: '#A06828' },
+  { K: '#0D0D0D', d: '#1C2A18', G: '#55AA33', Y: '#FFEE33',
+    B: '#7A4E18', a: '#A06830', b: '#503808', g: '#2E6018', s: '#1E1008' },
 );
 
-// Orc — 10 wide × 14 tall → 20 × 28 CSS px
-// Purple-grey bruiser with steel plate and white tusks
+// ── ORC — 10 × 14 → 20 × 28 CSS px ──────────────────────────────────────────
+// Scarred berserker bruiser. Dark-copper skin, blood-red irises, dark steel plate.
 const ORC: Sprite = sp(
   [
-    '..KPPPPK..',  // head top
-    '.KPPPPPPK.',
-    'KPPPPPPPpK',  // p=darker-skin right shadow
-    'KPPrKPrKPK',  // r=red iris, K=pupil
-    'KPKPPKpPPK',  // K=nostril marks
-    'KPwPPPwPpK',  // w=white tusk
-    '.KAAAAAAK.',  // A=steel armour (6 A inside)
-    'KAAAAAAAAK',  // full chest (8 A)
-    'KAaAaAaAAK',  // a=armour shadow crease
+    '..KPPPPK..',
+    '.KPPPPPpK.',
+    'KPPPPPPPpK',   // p=deep shadow on right
+    'KPPrKPrKpK',   // r=blood-red iris, K=slit pupil
+    'KPKPPKpPPK',   // K=nostril scar marks
+    'KPwPPPwPpK',   // w=yellowed war-tusk
+    '.KAAAAAK..',   // A=dark steel armour
+    'KAAAAAAAAK',
+    'KAaAaAaAAK',   // a=armour crease shadows
     '.KAaAaAaK.',
-    '..KPPKPPK.',  // legs
-    '..KPPKPPK.',
-    '..KBBKBBK.',  // B=dark boot
+    '..KPPKPpK.',   // bare legs
+    '..KPPKPpK.',
+    '..KBBKBBK.',   // B=black iron greaves
     '..........',
   ],
-  { K: '#0D0D0D', P: '#7B4E8A', p: '#5A3870', r: '#DD4422', w: '#FFFFF0', A: '#909090', a: '#555555', B: '#2A1A1A' },
+  { K: '#0D0D0D', P: '#6A3A28', p: '#4A2818', r: '#FF2200',
+    w: '#FFFFF0', A: '#445566', a: '#223344', B: '#1A0A00' },
 );
 
-// Dragon — 12 wide × 12 tall → 24 × 24 CSS px
-// Red beast with dark-membrane wings and gold accents
+// ── DRAGON — 12 × 12 → 24 × 24 CSS px ───────────────────────────────────────
+// Red wyvern. Body flanked by dark-membrane wings; gold slit eyes; tail below.
 const DRAGON: Sprite = sp(
   [
-    'WW..KRRK..WW',  // wing tips + body outline peak
-    'WWKRRRRRRKWW',  // wing spread meets body (6 R)
-    '.WKRRRRRRKW.',  // inner wing
-    '..KRRRRRRK..',  // body trunk
-    '..KRRrKrRRK.',  // r=gold iris, K=pupil
-    '..KRRRKKRRK.',  // KK=jaw/snarl gap
-    '..KRRRRRRK..',
-    '..KRK..KRK..',  // legs split
-    '.WKRrK.KrKW.',  // r=gold claw tips, W=wing lower edge
-    'WW.KK...KK.W',  // wings fold
-    'WW.........W',  // wing base
+    '..wwKRRKww..',   // w=deep wing membrane at tips
+    '.wKRRRRRRKw.',
+    'wKrRRRRRRRKw',   // r=bright red body highlight
+    'KwRRgRRgRRwK',   // g=gold iris pixels
+    'KwRRRRRRRRwK',
+    'KdwKRRRRKwdK',   // d=darkest membrane shadow
+    '.KdwKRRKwdK.',
+    '..KRRRdRKK..',   // lower body + leg nubs
+    '...KRRRdK...',
+    '....KdRKK...',   // tail base
+    '....KRRK....',   // tail tip
     '............',
   ],
-  { W: '#660000', R: '#CC2222', r: '#FFD700', K: '#0D0D0D' },
+  { K: '#0D0D0D', R: '#CC2200', r: '#FF4411', d: '#550F00', g: '#FFDD00', w: '#440C00' },
 );
 
 const SPRITES: Record<string, Sprite> = {
   slime: SLIME, goblin: GOBLIN, orc: ORC, dragon: DRAGON,
 };
 
-// Avatar — 8 wide × 16 tall → 16 × 32 CSS px (chibi hero)
-function makeAvatar(col: string): Sprite {
-  return sp(
-    [
-      '.KHHHK..',  // helmet
-      'KHHHHHHK',
-      'KHHfHHHK',  // f=face skin
-      'KffffHHK',  // face
-      '.KHHHHK.',  // neck/collar
-      'KHHHHHHK',  // shoulders
-      'KHHaaHHK',  // a=belt/sash
-      '.KHHHHK.',
-      '..KGGK..',  // G=trouser join
-      '.KGGKGGK',  // legs
-      '.KGGKGGK',
-      '.KGGKGGK',
-      '.KBBKBbK',  // B=boot, b=boot shadow
-      '.KBBKBBK',
-      '.KBBKBBK',
-      '........',
-    ],
-    { K: '#0D0D0D', H: col, f: '#FFDEAD', a: darken(col, 0.35), G: '#3A3A5A', B: '#1A1010', b: '#2A1A1A' },
-  );
-}
+// ── Colour helpers ────────────────────────────────────────────────────────────
 
-/** Darken a hex colour by `amount` (0-1). */
+/** Darken a hex colour by `amount` (0–1 fraction). */
 function darken(hex: string, amount: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
   const f = 1 - amount;
   return `#${[r, g, b].map((v) => Math.round(v * f).toString(16).padStart(2, '0')).join('')}`;
+}
+
+/** Lighten a hex colour by adding `amount` to each channel (0–255). */
+function lighten(hex: string, amount = 40): string {
+  const r = Math.min(255, parseInt(hex.slice(1, 3), 16) + amount);
+  const g = Math.min(255, parseInt(hex.slice(3, 5), 16) + amount);
+  const b = Math.min(255, parseInt(hex.slice(5, 7), 16) + amount);
+  return `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+}
+
+// ── AVATAR GUARD — 8 × 16 → 16 × 32 CSS px ──────────────────────────────────
+// Armoured castle sentinel. Full plate helm with visor, gold trim, dark greaves.
+function makeAvatar(col: string): Sprite {
+  return sp(
+    [
+      '..KHHK..',   // helmet crown
+      '.KHHhHK.',   // h=bright highlight on brow
+      'KHHHhHHK',   // full helm
+      'KHKKKhHK',   // KKK=narrow visor slit
+      '.KHHHHK.',   // chin guard
+      '..KffK..',   // f=skin face visible in visor gap
+      '.KHHHHK.',   // gorget / neck armour
+      'KHHcHHcK',   // c=gold decorative trim studs
+      'KHHHHHhK',   // chest plate
+      '.KDHDHK.',   // D=shadow crease on belly plate
+      '..KHHK..',   // upper legs
+      '.KHHHHK.',   // thighs
+      '.KDDDDK.',   // knee/shin shadow
+      '.KBBBBK.',   // greaves / boot top
+      '.KBBBBK.',   // boot
+      '........',
+    ],
+    { K: '#0D0D0D', H: col, h: lighten(col, 55), D: darken(col, 0.45),
+      f: '#FFDEAD', c: '#CCAA44', B: '#151525' },
+  );
 }
 
 // ─── Shared types ─────────────────────────────────────────────────────────────
@@ -277,6 +292,25 @@ function drawBackground(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
     ctx.fillRect(sx, 3, 1, 1);
     ctx.fillRect(sx + 22, 9, 1, 1);
   }
+
+  // Crescent moon — top-right of sky
+  const mx = W * 0.80, my = 20;
+  // Outer glow halo
+  const moonGlow = ctx.createRadialGradient(mx, my, 4, mx, my, 20);
+  moonGlow.addColorStop(0, 'rgba(255,252,200,0.18)');
+  moonGlow.addColorStop(1, 'rgba(255,252,200,0)');
+  ctx.fillStyle = moonGlow;
+  ctx.beginPath(); ctx.arc(mx, my, 20, 0, Math.PI * 2); ctx.fill();
+  // Moon disc
+  ctx.fillStyle = '#FFFAE0';
+  ctx.beginPath(); ctx.arc(mx, my, 9, 0, Math.PI * 2); ctx.fill();
+  // Crater pits (pixel detail)
+  ctx.fillStyle = 'rgba(200,190,150,0.5)';
+  ctx.fillRect(mx + 2, my - 3, 2, 2);
+  ctx.fillRect(mx - 3, my + 2, 2, 2);
+  // Shadow bite (crescent effect — matches sky colour at this position)
+  ctx.fillStyle = '#1A3A6A';
+  ctx.beginPath(); ctx.arc(mx + 4, my - 2, 7.5, 0, Math.PI * 2); ctx.fill();
 
   // Drifting clouds
   ctx.fillStyle = 'rgba(255,255,255,0.80)';
@@ -537,6 +571,25 @@ function drawCastle(ctx: CanvasRenderingContext2D, W: number, H: number, t: numb
   drawArrowSlit(rtX + 8, rtTop + 8);
   drawArrowSlit(rtX + 8, rtTop + 22);
 
+  // ── Warm window glow ───────────────────────────────────────────────────────
+  // Radiates amber torchlight from within the castle towers
+  function drawWindowGlow(wx: number, wy: number) {
+    const g = ctx.createRadialGradient(wx, wy, 0, wx, wy, 11);
+    g.addColorStop(0, 'rgba(255,155,35,0.55)');
+    g.addColorStop(1, 'rgba(255,90,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(wx - 11, wy - 11, 22, 22);
+    // Window pane fill
+    ctx.fillStyle = '#FF9020';
+    ctx.fillRect(wx - 2, wy - 3, 4, 5);
+    // Top bright pane glint
+    ctx.fillStyle = '#FFDD88';
+    ctx.fillRect(wx - 1, wy - 2, 2, 1);
+  }
+  drawWindowGlow(ltX + ltW / 2, ltTop + 18);
+  drawWindowGlow(rtX + rtW / 2, rtTop + 16);
+  drawWindowGlow(rtX + rtW / 2, rtTop + 30);
+
   // ── Gate arch ────────────────────────────────────────────────────────────────
   const gateMX = wallL + (wallR - wallL) / 2;
   const gateHW = 11;
@@ -596,6 +649,43 @@ function drawCastle(ctx: CanvasRenderingContext2D, W: number, H: number, t: numb
   ctx.fillStyle = '#FFEEAA';
   ctx.fillRect(flagPX + 4, flagBase - 20, 2, 8);
   ctx.fillRect(flagPX + 2, flagBase - 16, 6, 2);
+}
+
+// ─── Draw: dead trees ────────────────────────────────────────────────────────
+
+function drawTrees(ctx: CanvasRenderingContext2D, W: number, H: number) {
+  const groundY = H - GROUND_OFFSET;
+  const { castleL } = castleLayout(W);
+
+  // Sparse dead/spooky trees silhouetted against the sky
+  const trees = [
+    { xr: 0.19, h: 26, side: -1 },
+    { xr: 0.29, h: 20, side:  1 },
+    { xr: 0.40, h: 30, side: -1 },
+    { xr: 0.51, h: 22, side:  1 },
+    { xr: 0.62, h: 18, side: -1 },
+  ].filter(({ xr }) => xr * W > 90 && xr * W < castleL - 24);
+
+  ctx.strokeStyle = '#0B1608';
+  ctx.fillStyle   = '#0B1608';
+
+  for (const { xr, h: treeH, side } of trees) {
+    const tx = Math.round(W * xr);
+
+    // Trunk — 2 px wide
+    ctx.fillRect(tx - 1, groundY - treeH, 2, treeH);
+
+    // Three branches per tree, alternating sides
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(tx, groundY - treeH * 0.55);
+    ctx.lineTo(tx + side * 9, groundY - treeH * 0.38);
+    ctx.moveTo(tx, groundY - treeH * 0.70);
+    ctx.lineTo(tx - side * 7, groundY - treeH * 0.57);
+    ctx.moveTo(tx, groundY - treeH * 0.82);
+    ctx.lineTo(tx + side * 5, groundY - treeH * 0.74);
+    ctx.stroke();
+  }
 }
 
 // ─── Draw: monsters ───────────────────────────────────────────────────────────
@@ -727,6 +817,7 @@ export function QuestBanner({ boardId }: QuestBannerProps) {
       if (W >= 300) {
         drawBackground(ctx, W, BANNER_H, t);
         drawCave(ctx, W, BANNER_H, t);
+        drawTrees(ctx, W, BANNER_H);
         drawCastle(ctx, W, BANNER_H, t);
         drawMonsters(ctx, W, BANNER_H, t, cardsRef.current);
         drawGuards(ctx, W, BANNER_H, membersRef.current);
