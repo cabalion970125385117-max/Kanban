@@ -277,10 +277,10 @@ export function SettingsDialog() {
                 </button>
               ))}
 
-              {/* ── Quest Banner toggle ── */}
+              {/* ── RPG Mode toggle ── */}
               <div className="pt-4 border-t border-[var(--color-border)]">
                 <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">
-                  Quest Banner
+                  RPG Mode
                 </p>
                 <button
                   type="button"
@@ -294,11 +294,11 @@ export function SettingsDialog() {
                   <div className="flex items-center gap-3">
                     <span className="text-xl">⚔️</span>
                     <div>
-                      <p className="text-sm font-medium text-[var(--color-text)]">Animated Quest Banner</p>
+                      <p className="text-sm font-medium text-[var(--color-text)]">RPG Mode</p>
                       <p className="text-xs text-[var(--color-text-muted)]">
                         {questEnabled
-                          ? 'Enabled — monsters march from cave to castle'
-                          : 'Disabled — click to reveal the quest'}
+                          ? 'On — monsters march from cave to castle'
+                          : 'Off — animated banner is hidden'}
                       </p>
                     </div>
                   </div>
@@ -316,8 +316,8 @@ export function SettingsDialog() {
                   </div>
                 </button>
                 <p className="text-xs text-[var(--color-text-muted)] mt-2 px-1">
-                  Each open card spawns a monster. The closer the due date, the nearer it marches to the castle.
-                  Board members stand guard at the battlements.
+                  Each open card spawns a monster that marches toward the castle based on due-date urgency.
+                  Board members appear as armoured guards on the battlements.
                 </p>
               </div>
             </div>

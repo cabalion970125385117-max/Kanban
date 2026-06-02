@@ -834,7 +834,19 @@ export function QuestBanner({ boardId }: QuestBannerProps) {
 
   if (!enabled) {
     return (
-      <div className="h-10 flex-shrink-0 border-b border-[var(--color-border)]" aria-hidden="true" />
+      <div className="h-10 flex-shrink-0 border-b border-[var(--color-border)] flex items-center px-3 bg-[var(--color-bg)]">
+        <button
+          onClick={() => setEnabled(true)}
+          className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors group"
+          aria-label="Enable RPG Mode"
+        >
+          <span className="text-base leading-none">⚔️</span>
+          <span className="font-semibold tracking-wide">RPG Mode</span>
+          <span className="text-[10px] bg-[var(--color-border)] group-hover:bg-[var(--color-accent)]/15 rounded px-1.5 py-0.5 font-medium transition-colors">
+            OFF
+          </span>
+        </button>
+      </div>
     );
   }
 
@@ -843,21 +855,28 @@ export function QuestBanner({ boardId }: QuestBannerProps) {
       ref={containerRef}
       className="flex-shrink-0 border-b border-[var(--color-border)] relative overflow-hidden"
       style={{ height: BANNER_H }}
-      aria-label="Quest Banner — decorative animation showing your project's tasks as monsters"
+      aria-label="RPG Mode — animated pixel-art scene showing your project tasks as monsters marching on the castle"
     >
       <canvas
         ref={canvasRef}
         style={{ width: '100%', height: BANNER_H, display: 'block', imageRendering: 'pixelated' }}
       />
-      <button
+      {/* RPG Mode toggle — top-right corner overlay */}
+      <div className="absolute top-1.5 right-2 flex items-center gap-1 bg-black/30 hover:bg-black/50 rounded-full px-2 py-0.5 transition-colors group cursor-pointer"
         onClick={() => setEnabled(false)}
-        className="absolute top-1 right-1.5 w-5 h-5 flex items-center justify-center rounded text-white/25 hover:text-white/70 hover:bg-black/20 transition-colors text-[9px] font-bold leading-none"
-        title="Hide Quest Banner (re-enable in Settings → Appearance)"
-        aria-label="Hide Quest Banner"
-        tabIndex={-1}
+        role="button"
+        tabIndex={0}
+        aria-label="Disable RPG Mode"
+        title="Disable RPG Mode"
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setEnabled(false); }}
       >
-        ✕
-      </button>
+        <span className="text-[9px] font-bold text-white/50 group-hover:text-white/80 uppercase tracking-widest transition-colors select-none">
+          RPG Mode
+        </span>
+        <span className="text-white/40 group-hover:text-white/80 text-[9px] font-bold transition-colors select-none">
+          ✕
+        </span>
+      </div>
     </div>
   );
 }
