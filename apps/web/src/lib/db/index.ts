@@ -194,6 +194,13 @@ export interface CardAssignmentRow {
   created_at: string;
 }
 
+export interface BoardTagRow {
+  id: string;
+  board_id: string;
+  name: string;       // cleaned, lowercase, hyphenated — matches card_tags values
+  created_at: string;
+}
+
 // ─── DB Schema ────────────────────────────────────────────────────────────────
 
 interface QBSchema extends DBSchema {
@@ -291,10 +298,15 @@ interface QBSchema extends DBSchema {
     value: CardAssignmentRow;
     indexes: { 'by-user': string; 'by-board': string; 'by-card': string };
   };
+  board_tags: {
+    key: string;
+    value: BoardTagRow;
+    indexes: { 'by-board': string };
+  };
 }
 
 const DB_NAME = 'questboard';
-const DB_VERSION = 7; // v7 adds card_assignments
+const DB_VERSION = 8; // v8 adds board_tags
 
 let _db: Promise<IDBPDatabase<QBSchema>> | null = null;
 
@@ -384,6 +396,12 @@ export function getDB(): Promise<IDBPDatabase<QBSchema>> {
           asgn.createIndex('by-user', 'user_id', { unique: false });
           asgn.createIndex('by-board', 'board_id', { unique: false });
           asgn.createIndex('by-card', 'card_id', { unique: false });
+        }
+
+        // ── v8 stores (board-level tag registry) ─────────────────────────────
+        if (oldVersion < 8) {
+          const bt = db.createObjectStore('board_tags', { keyPath: 'id' });
+          bt.createIndex('by-board', 'board_id', { unique: false });
         }
       },
     });

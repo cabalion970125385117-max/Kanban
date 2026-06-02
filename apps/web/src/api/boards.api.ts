@@ -136,6 +136,9 @@ export async function permanentlyDeleteBoard(boardId: string): Promise<void> {
   const assignments = await db.getAllFromIndex('card_assignments', 'by-board', boardId);
   for (const a of assignments) await db.delete('card_assignments', a.id);
 
+  const boardTagRows = await db.getAllFromIndex('board_tags', 'by-board', boardId);
+  for (const t of boardTagRows) await db.delete('board_tags', t.id);
+
   await db.delete('boards', boardId);
 }
 
@@ -311,4 +314,76 @@ export async function updateLabel(
 export async function deleteLabel(_boardId: string, labelId: string): Promise<void> {
   const db = await getDB();
   await db.delete('labels', labelId);
+}
+
+// ─── Board Tags ───────────────────────────────────────────────────────────────
+
+/** All explicitly-created tags for this board, sorted alphabetically. */
+export async function getBoardDefinedTags(boardId: string): Promise<string[]> {
+  const db = await getDB();
+  const rows = await db.getAllFromIndex('board_tags', 'by-board', boardId);
+  return rows.map((r) => r.name).sort();
+}
+
+/** Board tags with per-tag card usage counts. */
+export async function getBoardTagsWithCount(
+  boardId: string,
+): Promise<Array<{ name: string; cardCount: number; defined: boolean }>> {
+  const db = await getDB();
+
+  // Defined tags (explicitly created)
+  const definedRows = await db.getAllFromIndex('board_tags', 'by-board', boardId);
+  const definedSet = new Set(definedRows.map((r) => r.name));
+
+  // Count tag usage across all (non-archived) cards
+  const cards = await db.getAllFromIndex('cards', 'by-board', boardId);
+  const countMap = new Map<string, number>();
+  for (const card of cards) {
+    if (card.archived_at) continue;
+    for (const tag of card.card_tags ?? []) {
+      countMap.set(tag, (countMap.get(tag) ?? 0) + 1);
+    }
+  }
+
+  // Union of defined and in-use tags
+  const allNames = new Set([...definedSet, ...countMap.keys()]);
+  return [...allNames]
+    .sort()
+    .map((name) => ({ name, cardCount: countMap.get(name) ?? 0, defined: definedSet.has(name) }));
+}
+
+/** Create a tag on a board. Idempotent — silently skips duplicates. */
+export async function createBoardDefinedTag(boardId: string, name: string): Promise<void> {
+  const cleaned = name.trim().toLowerCase().replace(/\s+/g, '-');
+  if (!cleaned) return;
+  const db = await getDB();
+  const existing = await db.getAllFromIndex('board_tags', 'by-board', boardId);
+  if (existing.some((r) => r.name === cleaned)) return;
+  await db.put('board_tags', { id: uid(), board_id: boardId, name: cleaned, created_at: now() });
+}
+
+/**
+ * Delete a tag from the board registry AND remove it from every card on that board.
+ * Returns the number of cards that were updated.
+ */
+export async function deleteBoardDefinedTag(boardId: string, name: string): Promise<number> {
+  const db = await getDB();
+
+  // Remove from board_tags store
+  const rows = await db.getAllFromIndex('board_tags', 'by-board', boardId);
+  const row = rows.find((r) => r.name === name);
+  if (row) await db.delete('board_tags', row.id);
+
+  // Cascade: remove tag from every card on this board
+  const cards = await db.getAllFromIndex('cards', 'by-board', boardId);
+  let affected = 0;
+  const tx = db.transaction('cards', 'readwrite');
+  for (const card of cards) {
+    if (card.card_tags?.includes(name)) {
+      await tx.store.put({ ...card, card_tags: card.card_tags.filter((t) => t !== name) });
+      affected++;
+    }
+  }
+  await tx.done;
+  return affected;
 }

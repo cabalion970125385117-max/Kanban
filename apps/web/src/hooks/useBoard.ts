@@ -218,11 +218,57 @@ export function useBoardCardCount(boardId: string) {
   });
 }
 
+/** All tags on a board: union of explicitly-created tags + tags in use on cards. */
 export function useBoardTags(boardId: string) {
   return useQuery({
     queryKey: ['board-tags', boardId],
-    queryFn: () => cardsApi.getBoardTags(boardId),
+    queryFn: async () => {
+      const [implicit, defined] = await Promise.all([
+        cardsApi.getBoardTags(boardId),
+        boardsApi.getBoardDefinedTags(boardId),
+      ]);
+      return [...new Set([...defined, ...implicit])].sort();
+    },
     enabled: !!boardId,
+  });
+}
+
+/** Tags with usage counts + defined flag — used by BoardTagsDialog. */
+export function useBoardTagsWithCount(boardId: string) {
+  return useQuery({
+    queryKey: ['board-tags-count', boardId],
+    queryFn: () => boardsApi.getBoardTagsWithCount(boardId),
+    enabled: !!boardId,
+  });
+}
+
+export function useCreateBoardTag(boardId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => boardsApi.createBoardDefinedTag(boardId, name),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['board-tags', boardId] });
+      qc.invalidateQueries({ queryKey: ['board-tags-count', boardId] });
+    },
+    onError: () => toast.error('Failed to create tag'),
+  });
+}
+
+export function useDeleteBoardTag(boardId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => boardsApi.deleteBoardDefinedTag(boardId, name),
+    onSuccess: (affected, name) => {
+      qc.invalidateQueries({ queryKey: ['board-tags', boardId] });
+      qc.invalidateQueries({ queryKey: ['board-tags-count', boardId] });
+      qc.invalidateQueries({ queryKey: ['cards', boardId] });
+      toast.success(
+        affected > 0
+          ? `#${name} removed from ${affected} card${affected !== 1 ? 's' : ''}`
+          : `#${name} deleted`,
+      );
+    },
+    onError: () => toast.error('Failed to delete tag'),
   });
 }
 

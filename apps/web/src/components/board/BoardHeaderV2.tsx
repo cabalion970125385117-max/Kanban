@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Settings, Bug, Scroll, GanttChartSquare, Kanban, Zap, BarChart3, Users, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Settings, Bug, Scroll, GanttChartSquare, Kanban, Zap, BarChart3, Users, TrendingUp, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PresenceBar } from '@/components/collaboration/PresenceBar';
 import { NotificationDrawer } from '@/components/shared/NotificationDrawer';
 import { VersionBadge } from '@/components/shared/VersionBadge';
 import { BoardMembersDialog } from './BoardMembersDialog';
 import { ProgressReportModal } from './ProgressReportModal';
+import { BoardTagsDialog } from './BoardTagsDialog';
 import { useSettingsStore } from '@/stores/settings.store';
 import { useUiStore } from '@/stores/ui.store';
 import type { Board } from '@questboard/shared';
@@ -23,6 +24,7 @@ export function BoardHeader({ board }: BoardHeaderProps) {
   const { openBugReport, openChangelog } = useUiStore();
   const [membersOpen, setMembersOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [tagsOpen, setTagsOpen] = useState(false);
 
   return (
     <>
@@ -94,6 +96,16 @@ export function BoardHeader({ board }: BoardHeaderProps) {
         <Button
           variant="ghost"
           size="icon"
+          onClick={() => setTagsOpen(true)}
+          className="text-white hover:bg-white/10"
+          title="Manage tags"
+          aria-label="Manage tags"
+        >
+          <Tag className="h-4 w-4" aria-hidden="true" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => setMembersOpen(true)}
           className="text-white hover:bg-white/10"
           title="Board members"
@@ -159,6 +171,14 @@ export function BoardHeader({ board }: BoardHeaderProps) {
         boardId={board.id}
         boardName={board.name}
         onClose={() => setReportOpen(false)}
+      />
+    )}
+
+    {tagsOpen && (
+      <BoardTagsDialog
+        boardId={board.id}
+        boardName={board.name}
+        onClose={() => setTagsOpen(false)}
       />
     )}
     </>
