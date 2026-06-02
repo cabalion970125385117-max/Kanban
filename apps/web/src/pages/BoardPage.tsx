@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { BoardHeader } from '@/components/board/BoardHeaderV2';
 import { BoardCanvas } from '@/components/board/BoardCanvas';
@@ -13,12 +13,14 @@ import { useBoard } from '@/hooks/useBoard';
 import { useBoardSocket } from '@/hooks/useSocket';
 import { useBoardStore } from '@/stores/board.store';
 import type { ActiveFilters, BoardView, SwimlaneGroupBy } from '@/components/board/FilterBar';
-import type { Card } from '@questboard/shared';
 
 export function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
-  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+  // Store only the ID — derive the live card from the board store so the
+  // drawer always reflects the latest owners, labels, and other mutations
+  // made while the drawer is open.
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [filters, setFilters] = useState<ActiveFilters>({ userId: null, priority: null, labelId: null });
   const [view, setView] = useState<BoardView>('kanban');
   const [swimlaneGroupBy, setSwimlaneGroupBy] = useState<SwimlaneGroupBy>('priority');
@@ -26,7 +28,19 @@ export function BoardPage() {
   const { boardQuery, isLoading } = useBoard(boardId ?? '');
   const { emitCursor, emitTypingStart, emitTypingStop } = useBoardSocket(boardId);
 
+  const storeCards = useBoardStore((s) => s.cards);
   const clear = useBoardStore((s) => s.clear);
+
+  // Live-derived selected card — auto-updates whenever the store mutates
+  // (e.g. addCardOwner, removeCardOwner, updateCard).
+  const selectedCard = useMemo(() => {
+    if (!selectedCardId) return null;
+    for (const colCards of Object.values(storeCards)) {
+      const found = colCards.find((c) => c.id === selectedCardId);
+      if (found) return found;
+    }
+    return null;
+  }, [selectedCardId, storeCards]);
 
   useEffect(() => {
     return () => { clear(); };
@@ -97,15 +111,15 @@ export function BoardPage() {
         <InboxColumn boardId={boardId} />
         <div className="flex-1 overflow-hidden py-4">
           {view === 'kanban' && (
-            <BoardCanvas boardId={boardId} onCardClick={setSelectedCard} filters={filters} />
+            <BoardCanvas boardId={boardId} onCardClick={(c) => setSelectedCardId(c.id)} filters={filters} />
           )}
           {view === 'table' && (
-            <TableView onCardClick={setSelectedCard} filters={filters} />
+            <TableView onCardClick={(c) => setSelectedCardId(c.id)} filters={filters} />
           )}
           {view === 'swimlane' && (
             <SwimlaneCanvas
               boardId={boardId}
-              onCardClick={setSelectedCard}
+              onCardClick={(c) => setSelectedCardId(c.id)}
               filters={filters}
               groupBy={swimlaneGroupBy}
             />
@@ -116,7 +130,7 @@ export function BoardPage() {
       <CardDetailDrawer
         card={selectedCard}
         boardId={boardId}
-        onClose={() => setSelectedCard(null)}
+        onClose={() => setSelectedCardId(null)}
         emitTypingStart={emitTypingStart}
         emitTypingStop={emitTypingStop}
       />
