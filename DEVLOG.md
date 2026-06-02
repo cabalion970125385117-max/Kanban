@@ -4,6 +4,74 @@ Chronological record of changes, bug fixes, and technical decisions.
 
 ---
 
+## 2026-06-02 — v1.2.0 · Custom Sprites · RPG Mode · Issued Cards Sidebar
+
+### Custom Sprite Redesign (`QuestBanner.tsx`)
+
+All five sprites completely redrawn from scratch — hand-coded pixel art, no external assets.
+Each sprite now uses `K='#0D0D0D'` dark outlines, 4–6 dedicated palette colours, and consistent top-left light direction. The `lighten(hex, amount)` helper was added alongside the existing `darken()` for highlight colours.
+
+| Sprite | Art size | Palette highlights | Character |
+|--------|----------|-------------------|-----------|
+| Slime  | 8 × 8    | poison green `#22CC44`, glassy eye `#DDFFDD` | Toxic blob, belly shadow, four raised bumps |
+| Goblin | 8 × 14   | dark hood `#1C2A18`, glowing eyes `#FFEE33` | Hooded assassin, leather torso, boots |
+| Orc    | 10 × 14  | blood iris `#FF2200`, dark steel `#445566` | Scarred berserker, white tusks, plate shoulder |
+| Dragon | 12 × 12  | wing membrane `#440C00`, gold eyes `#FFDD00` | Red wyvern, folded wings, armoured underbelly |
+| Avatar | 8 × 16   | gold trim `c='#CCAA44'`, visor slit | Armoured sentinel, archetype-coloured plate, `lighten()` highlights |
+
+### Environment Additions (`QuestBanner.tsx`)
+
+- **Crescent moon** (`drawBackground`): disc + shadow-bite + radial halo glow above the castle
+- **Dead trees** (`drawTrees()`): 5 silhouette trees with forked bare branches, placed between cave exit and castle; drawn per-RAF between cave and castle layers
+- **Tower window glow** (`drawWindowGlow()` inside `drawCastle()`): 3 amber `createRadialGradient` glows at each tower window opening
+
+### RPG Mode — Rename & Toggle
+
+**Rename:** "Quest Banner" renamed to "RPG Mode" everywhere — `QuestBanner.tsx`, `SettingsDialog.tsx`, aria labels, and all descriptive strings.
+
+**Toggle behaviour:**
+- **ON**: Banner renders in full. A `"RPG MODE ✕"` pill (semi-transparent dark capsule) overlays the top-right corner. Click or Enter/Space dismisses to OFF.
+- **OFF**: Full banner replaced by a single `h-10` re-enable strip — `⚔️ RPG Mode [OFF]` — matching the reserved header slot height. Clicking it re-enables the full animation.
+- State persisted in localStorage via `useQuestStore` (key `questboard-quest-banner`).
+
+**SettingsDialog → Appearance tab:**
+- Section heading: `"QUEST BANNER"` → `"RPG Mode"`
+- Button label: `"Animated Quest Banner"` → `"RPG Mode"`
+- Status text: `"Enabled/Disabled"` → `"On — monsters march…" / "Off — animated banner is hidden"`
+
+### Issued Cards Sidebar (`BoardsPage.tsx`)
+
+New `IssuedCardsSidebar` component (`components/boards/IssuedCardsSidebar.tsx`) docked to the right of the Boards page.
+
+**IssueForm section:**
+- Board picker (dropdown of all user boards)
+- Assignee dropdown (all board members)
+- Title input
+- Priority chips: Critical / High / Medium / Low
+
+**Awaiting Response list:**
+- Fetched via `useIssuedByMe()` — full `card_assignments` scan filtered by `assigned_by_id === currentUserId && status === 'pending'`
+- Each row shows: title, board name badge, assignee avatar, priority chip, age string
+- Age colour coding: grey `< 3 days`, amber `WAITING ≥ 3 days`, red `STALE ≥ 7 days`
+- Per-card actions: **Withdraw** (✕) calls `useWithdrawAssignment` mutation; **Inline edit** (✎) expands title + priority inline before the other party responds
+
+**API additions** (`assignments.api.ts`):
+- `getIssuedByMe()` — returns `IssuedCard[]` with nested `assignee` and `boardName`
+- `withdrawAssignment(id)` — deletes row; marks assignee's notification as read
+- `updateIssuedCard(id, patch)` — patches title/priority; updates notification message text
+
+**Hook additions** (`useAssignments.ts`):
+- `useIssuedByMe()` — query key `['issued-by-me', userId]`
+- `useWithdrawAssignment()` — mutation, invalidates `issued-by-me`
+- `useUpdateIssuedCard()` — mutation `{ id, patch: { title?, priority? } }`
+
+**BoardsPage layout change:**
+- `min-h-screen` centred layout → `h-screen flex flex-col overflow-hidden`
+- Body: `flex flex-1 overflow-hidden` — `<main>` (flex-1, overflow-y-auto) + `<IssuedCardsSidebar />` on right
+- Board grid: `lg:grid-cols-3` → `sm:grid-cols-2` (sidebar occupies right column)
+
+---
+
 ## 2026-05-30 — v1.2.0 · FF-style Quest Banner + Bug Fixes
 
 ### Quest Banner Redesign (`QuestBanner.tsx`)

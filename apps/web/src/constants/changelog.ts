@@ -7,12 +7,14 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
-    date: '2026-05-30',
+    date: '2026-06-02',
     changes: [
-      'Quest Banner: redesigned with Final Fantasy–style pixel art — dark outlines, multi-shade sprites, detailed castle',
-      'Quest Banner: new cave stalactites, animated torches with glow, portcullis bars, waving flag with golden cross',
-      'Quest Banner: larger sprites — Slime (8×8), Goblin (8×14), Orc (10×14), Dragon (12×12) — all with FF shading',
-      'Quest Banner: pixel star band in sky, grass tufts on hills, FF dungeon stone texture on castle walls',
+      'RPG Mode: all five sprites completely redrawn — poison-green Slime, hooded Goblin, scarred Orc berserker, red Wyvern Dragon, armoured Avatar sentinel',
+      'RPG Mode: crescent moon in sky, dead tree silhouettes between cave and castle, amber window glow on tower faces',
+      'RPG Mode: renamed from "Quest Banner"; toggle button in banner (pill overlay) and re-enable strip when off',
+      'RPG Mode: redesigned with Final Fantasy–style pixel art — dark outlines, multi-shade sprites, detailed castle',
+      'RPG Mode: cave stalactites, animated torches with glow, portcullis bars, waving flag with golden cross',
+      'Issued Cards sidebar on Boards page: issue cards cross-board, track awaiting-response cards with age, withdraw or edit before response',
       'Bug fix: duplicate Assignees section removed from Card Detail drawer',
       'Bug fix: Card Detail drawer description/title hover now respects dark mode theme',
       'Bug fix: Board Delete dialog confirmation input now respects dark mode theme',
