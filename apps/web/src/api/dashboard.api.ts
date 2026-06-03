@@ -18,7 +18,8 @@ export type WidgetType =
   | 'avg-close-time'
   | 'upcoming-due'
   | 'recent-comments'
-  | 'trend-analysis';
+  | 'trend-analysis'
+  | 'mindmap';
 
 export interface WidgetConfig {
   id: string;
@@ -46,6 +47,7 @@ export const WIDGET_META: Record<WidgetType, { label: string; description: strin
   'upcoming-due':     { label: 'Upcoming Due',        description: 'Cards due in the next 14 days' },
   'recent-comments':  { label: 'Recent Comments',     description: 'Latest comments across all cards' },
   'trend-analysis':   { label: 'Trend Analysis',      description: 'Weekly created vs completed card velocity' },
+  'mindmap':          { label: 'Word Cloud',           description: 'Keyword frequency map — bigger = more cards mention it' },
 };
 
 // ─── Layout CRUD ──────────────────────────────────────────────────────────────

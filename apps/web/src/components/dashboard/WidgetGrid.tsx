@@ -31,6 +31,7 @@ import { AvgCloseTimeWidget } from './widgets/AvgCloseTimeWidget';
 import { UpcomingDueWidget } from './widgets/UpcomingDueWidget';
 import { RecentCommentsWidget } from './widgets/RecentCommentsWidget';
 import { TrendAnalysisWidget } from './widgets/TrendAnalysisWidget';
+import { MindmapWidget } from './widgets/MindmapWidget';
 
 // ─── Render widget content ────────────────────────────────────────────────────
 
@@ -47,6 +48,7 @@ function WidgetContent({ type, data }: { type: WidgetConfig['type']; data: Dashb
     case 'upcoming-due':    return <UpcomingDueWidget cards={data.cards} columns={data.columns} />;
     case 'recent-comments': return <RecentCommentsWidget comments={data.recentComments} />;
     case 'trend-analysis':  return <TrendAnalysisWidget cards={data.cards} columns={data.columns} />;
+    case 'mindmap':         return <MindmapWidget cards={data.cards} />;
     default: return null;
   }
 }
@@ -105,8 +107,11 @@ function WidgetTile({ widget, data, onRemove, readOnly, isDragging }: TileProps)
         )}
       </div>
 
-      {/* Tile body */}
-      <div className="flex-1 p-4 min-h-[180px] overflow-hidden">
+      {/* Tile body — canvas-heavy widgets need extra height */}
+      <div className={`flex-1 p-4 overflow-hidden ${
+        widget.type === 'mindmap' ? 'min-h-[300px]' :
+        widget.type === 'trend-analysis' ? 'min-h-[240px]' : 'min-h-[180px]'
+      }`}>
         <WidgetContent type={widget.type} data={data} />
       </div>
     </div>
