@@ -6,8 +6,9 @@
  *
  * Shape modes
  *   Fill  — words cover the entire widget area (rectangular bounds)
- *   Brain — words packed inside a sideways brain silhouette (two lobes
- *           top/bottom, interhemispheric fissure running left-right)
+ *   Brain — words packed inside a side-profile brain silhouette that
+ *           matches the 🧠 emoji: two bumps on top (frontal + parietal),
+ *           rounded occipital back, flat temporal base, front face.
  */
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
@@ -64,39 +65,60 @@ function extractWords(cards: Card[]): Map<string, number> {
   return freq;
 }
 
-// ─── Sideways brain path (90° CW rotation of top-view brain) ─────────────────
+// ─── Side-profile brain path (matches 🧠 emoji silhouette) ───────────────────
 //
-// Original top-view brain: two hemispheres left/right, fissure vertical.
-// After 90° CW rotation (x,y)→(y,−x): two lobes top/bottom, fissure horizontal.
-// Radii rx, ry control half-width and half-height of the overall shape.
+// Coordinate system: centre = (cx, cy), x-axis = rx, y-axis = ry
+//   front of brain = LEFT  (negative x)
+//   back  of brain = RIGHT (positive x)
+//   top              = UP  (negative y)
+//
+// Path drawn clockwise from the front-bottom.
+//
+// Normalised extents of the path:
+//   x  ∈ [−0.91, +0.90]  →  span 1.81 × rx
+//   y  ∈ [−0.80, +0.70]  →  span 1.50 × ry
+//
+// Two visible bumps on the top edge:
+//   • Frontal lobe  (front bump, x ≈ −0.35)
+//   • Parietal lobe (back  bump, x ≈ +0.40)
+// separated by a shallow central-sulcus dip at x ≈ 0.
 
-function drawSidewaysBrainPath(
+function drawSideBrainPath(
   ctx: CanvasRenderingContext2D,
   cx: number, cy: number,
   rx: number, ry: number,
 ) {
-  const px = (t: number) => cx + t * rx;
-  const py = (t: number) => cy + t * ry;
+  const x = (t: number) => cx + t * rx;
+  const y = (t: number) => cy + t * ry;
 
   ctx.beginPath();
-  ctx.moveTo(px(-0.68), py( 0.08));
 
-  // upper-left curve (bottom lobe left side)
-  ctx.bezierCurveTo(px(-1.05), py( 0.30), px(-1.00), py( 0.72), px(-0.58), py( 0.95));
-  // bottom-left corner
-  ctx.bezierCurveTo(px(-0.20), py( 1.12), px( 0.25), py( 1.10), px( 0.62), py( 0.92));
-  // bottom-right corner
-  ctx.bezierCurveTo(px( 0.98), py( 0.72), px( 1.05), py( 0.30), px( 0.72), py( 0.08));
-  // right fissure notch
-  ctx.bezierCurveTo(px( 0.76), py( 0.04), px( 0.76), py(-0.04), px( 0.72), py(-0.08));
-  // upper-right corner (top lobe right side)
-  ctx.bezierCurveTo(px( 1.05), py(-0.30), px( 0.98), py(-0.72), px( 0.62), py(-0.92));
-  // top-right corner
-  ctx.bezierCurveTo(px( 0.25), py(-1.10), px(-0.20), py(-1.12), px(-0.58), py(-0.95));
-  // top-left corner (top lobe left side)
-  ctx.bezierCurveTo(px(-1.00), py(-0.72), px(-1.05), py(-0.30), px(-0.68), py(-0.08));
-  // left fissure notch
-  ctx.bezierCurveTo(px(-0.72), py(-0.04), px(-0.72), py( 0.04), px(-0.68), py( 0.08));
+  // ── Start: front-bottom ──────────────────────────────────────────────────
+  ctx.moveTo(x(-0.72), y(0.42));
+
+  // ── Front face: frontal lobe curves up and slightly forward ──────────────
+  ctx.bezierCurveTo(x(-0.90), y(0.18), x(-0.91), y(-0.22), x(-0.68), y(-0.62));
+
+  // ── Frontal lobe top bump (front/left bump) ──────────────────────────────
+  ctx.bezierCurveTo(x(-0.52), y(-0.80), x(-0.18), y(-0.80), x(-0.05), y(-0.66));
+
+  // ── Central sulcus — shallow dip between the two bumps ───────────────────
+  ctx.bezierCurveTo(x( 0.02), y(-0.57), x( 0.10), y(-0.57), x( 0.18), y(-0.66));
+
+  // ── Parietal lobe top bump (back/right bump) ─────────────────────────────
+  ctx.bezierCurveTo(x( 0.36), y(-0.80), x( 0.62), y(-0.78), x( 0.78), y(-0.55));
+
+  // ── Occipital lobe — rounded back of brain ───────────────────────────────
+  ctx.bezierCurveTo(x( 0.90), y(-0.30), x( 0.90), y( 0.14), x( 0.78), y(0.48));
+
+  // ── Bottom-back (occipital/temporal base) ────────────────────────────────
+  ctx.bezierCurveTo(x( 0.64), y( 0.66), x( 0.34), y( 0.70), x( 0.05), y(0.68));
+
+  // ── Bottom-front (temporal base — flat underside) ────────────────────────
+  ctx.bezierCurveTo(x(-0.22), y( 0.66), x(-0.50), y( 0.58), x(-0.66), y(0.48));
+
+  // ── Close back to front-bottom ────────────────────────────────────────────
+  ctx.bezierCurveTo(x(-0.70), y( 0.44), x(-0.72), y( 0.42), x(-0.72), y(0.42));
 
   ctx.closePath();
 }
@@ -110,9 +132,8 @@ function buildBrainMask(W: number, H: number): Uint8ClampedArray {
   off.height = H;
   const ctx  = off.getContext('2d')!;
   ctx.fillStyle = '#000';
-  // Square radii so the brain is always portrait (taller than wide)
-  const r = Math.min(W * 0.42, H * 0.44);
-  drawSidewaysBrainPath(ctx, W / 2, H / 2, r, r);
+  // rx/ry chosen so the brain fills ~85% width × ~75% height
+  drawSideBrainPath(ctx, W / 2, H / 2, W * 0.47, H * 0.50);
   ctx.fill();
   return ctx.getImageData(0, 0, W, H).data;
 }
@@ -150,9 +171,9 @@ function renderCloud(canvas: HTMLCanvasElement, wordFreqs: Map<string, number>, 
   }
 
   const cx = W / 2, cy = H / 2;
-  const sorted   = [...wordFreqs.entries()].sort(([, a], [, b]) => b - a).slice(0, 70);
-  const maxFreq  = sorted[0][1];
-  const minFreq  = sorted[sorted.length - 1][1];
+  const sorted    = [...wordFreqs.entries()].sort(([, a], [, b]) => b - a).slice(0, 70);
+  const maxFreq   = sorted[0][1];
+  const minFreq   = sorted[sorted.length - 1][1];
   const freqRange = Math.max(1, maxFreq - minFreq);
 
   const MIN_PX = 10;
@@ -161,16 +182,16 @@ function renderCloud(canvas: HTMLCanvasElement, wordFreqs: Map<string, number>, 
   const placed: Array<{ x: number; y: number; w: number; h: number }> = [];
   ctx.textBaseline = 'top';
 
-  // ── Fill mode: words pack into the full canvas rectangle ─────────────────
+  // ── Fill mode: words pack the full canvas rectangle ──────────────────────
   if (shape === 'fill') {
     const PAD_X  = 12, PAD_Y  = 10;
     const usableW = W - PAD_X * 2;
     const usableH = H - PAD_Y * 2;
 
-    // Elliptical spiral scaled so it reaches the edges of usableW × usableH
+    // Elliptical spiral scaled so the furthest point reaches the canvas edges
     const maxR = Math.max(usableW, usableH) * 0.52;
-    const hStr = (usableW / 2) / maxR;   // horizontal stretch factor
-    const vStr = (usableH / 2) / maxR;   // vertical stretch factor
+    const hStr = (usableW / 2) / maxR;
+    const vStr = (usableH / 2) / maxR;
 
     for (const [word, freq] of sorted) {
       const t  = (freq - minFreq) / freqRange;
@@ -206,13 +227,17 @@ function renderCloud(canvas: HTMLCanvasElement, wordFreqs: Map<string, number>, 
     return;
   }
 
-  // ── Brain mode: words packed inside sideways-brain silhouette ────────────
-  const mask = buildBrainMask(W, H);
-  // Square radii matching the mask
-  const bR    = Math.min(W * 0.42, H * 0.44);
-  // Spiral — slightly compressed horizontally since the brain is portrait
-  const maxR  = bR * 1.05;
+  // ── Brain mode: words packed inside the side-profile silhouette ──────────
+  const bRx   = W * 0.47;
+  const bRy   = H * 0.50;
+  const mask  = buildBrainMask(W, H);
 
+  // Spiral stretched to fit the brain's landscape aspect ratio
+  const maxR  = Math.min(bRx, bRy) * 0.92;
+  const hStr  = bRx / Math.min(bRx, bRy);
+  const vStr  = bRy / Math.min(bRx, bRy);
+
+  // Brain centroid is roughly at canvas centre — fine as spiral origin
   for (const [word, freq] of sorted) {
     const t  = (freq - minFreq) / freqRange;
     const fs = Math.round(MIN_PX + t * (MAX_PX - MIN_PX));
@@ -222,14 +247,13 @@ function renderCloud(canvas: HTMLCanvasElement, wordFreqs: Map<string, number>, 
 
     for (let theta = 0; theta < 15 * Math.PI; theta += 0.08) {
       const r  = (theta / (15 * Math.PI)) * maxR;
-      // slight horizontal compression to match portrait brain shape
-      const ex = cx + r * 0.92 * Math.cos(theta * 1.3);
-      const ey = cy + r *         Math.sin(theta * 1.3);
+      const ex = cx + r * hStr * Math.cos(theta * 1.25);
+      const ey = cy + r * vStr * Math.sin(theta * 1.25);
 
       const tx = Math.round(ex - tw / 2);
       const ty = Math.round(ey - th / 2);
 
-      // All four corners + centre must lie inside the brain mask
+      // All four corners + centre must lie within the brain silhouette
       if (!inMask(mask, W, H, tx,          ty          )) continue;
       if (!inMask(mask, W, H, tx + tw,     ty          )) continue;
       if (!inMask(mask, W, H, tx,          ty + th     )) continue;
@@ -250,17 +274,23 @@ function renderCloud(canvas: HTMLCanvasElement, wordFreqs: Map<string, number>, 
     }
   }
 
-  // Draw a subtle brain outline + horizontal interhemispheric fissure line
+  // ── Brain outline + sulcus detail ─────────────────────────────────────────
+  // Outer silhouette
   ctx.strokeStyle = 'rgba(91,79,207,0.14)';
   ctx.lineWidth   = 1.5;
-  drawSidewaysBrainPath(ctx, cx, cy, bR, bR);
+  drawSideBrainPath(ctx, cx, cy, bRx, bRy);
   ctx.stroke();
 
-  ctx.strokeStyle = 'rgba(91,79,207,0.10)';
+  // Central sulcus hint — short curved stroke between the two bumps
+  ctx.strokeStyle = 'rgba(91,79,207,0.09)';
   ctx.lineWidth   = 1;
   ctx.beginPath();
-  ctx.moveTo(cx - bR * 0.68, cy);
-  ctx.bezierCurveTo(cx - bR * 0.18, cy - 4, cx + bR * 0.18, cy + 4, cx + bR * 0.72, cy);
+  ctx.moveTo(cx + bRx * 0.06, cy - bRy * 0.58);
+  ctx.bezierCurveTo(
+    cx + bRx * 0.09, cy - bRy * 0.68,
+    cx + bRx * 0.11, cy - bRy * 0.44,
+    cx + bRx * 0.14, cy - bRy * 0.40,
+  );
   ctx.stroke();
 }
 
