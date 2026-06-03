@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { VersionBadge } from '@/components/shared/VersionBadge';
 import { BoardDeleteDialog } from '@/components/board/BoardDeleteDialog';
 import { IssuedCardsSidebar } from '@/components/boards/IssuedCardsSidebar';
+import { AppLogo } from '@/components/shared/AppLogo';
 import { useBoards, useCreateBoard, useArchiveBoard, usePermanentlyDeleteBoard, useBoardCardCount } from '@/hooks/useBoard';
 import type { Board, UserRole } from '@questboard/shared';
 
@@ -163,8 +164,7 @@ export function BoardsPage() {
       {/* ── Header ── */}
       <header className="bg-[var(--color-primary)] text-white px-6 py-4 flex items-center justify-between shadow-md flex-shrink-0">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">{'⚔️'}</span>
-          <span className="font-bold text-lg tracking-wide">QuestBoard</span>
+          <AppLogo variant="nav" />
           <VersionBadge className="text-white/50" />
         </div>
         <div className="flex items-center gap-2">

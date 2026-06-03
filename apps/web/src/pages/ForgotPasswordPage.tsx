@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
+import { AppLogo } from '@/components/shared/AppLogo';
 import { resetPasswordRequestSchema, type ResetPasswordRequestInput } from '@questboard/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,9 +32,8 @@ export function ForgotPasswordPage() {
     <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="text-5xl mb-3">⚔️</div>
-          <h1 className="text-2xl font-bold text-[var(--color-primary)]">QuestBoard</h1>
+        <div className="mb-8">
+          <AppLogo variant="auth" />
         </div>
 
         <div className="bg-[var(--color-surface)] rounded-2xl shadow-lg p-8">

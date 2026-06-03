@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { VersionBadge } from '@/components/shared/VersionBadge';
 import { useUiStore } from '@/stores/ui.store';
 import { AppWordCloudBanner } from '@/components/shared/AppWordCloudBanner';
+import { AppLogo } from '@/components/shared/AppLogo';
 
 export function LoginPage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -17,12 +18,8 @@ export function LoginPage() {
 
       <div id="main-content" className="flex-1 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="text-4xl mb-3">{'⚔️'}</div>
-          <h1 className="text-3xl font-bold text-[var(--color-primary)]">QuestBoard</h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-1">
-            Pixel-art project management
-          </p>
+        <div className="mb-8">
+          <AppLogo variant="auth" />
         </div>
 
         <Card>
