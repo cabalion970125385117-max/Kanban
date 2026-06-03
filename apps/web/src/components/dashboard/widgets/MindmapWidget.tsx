@@ -3,7 +3,11 @@
  *
  * Extracts keywords from card titles, tags, and label names.
  * Word size is proportional to frequency.
- * Two shape modes: Normal (ellipse) and Brain.
+ *
+ * Shape modes
+ *   Fill  — words cover the entire widget area (rectangular bounds)
+ *   Brain — words packed inside a sideways brain silhouette (two lobes
+ *           top/bottom, interhemispheric fissure running left-right)
  */
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
@@ -60,9 +64,13 @@ function extractWords(cards: Card[]): Map<string, number> {
   return freq;
 }
 
-// ─── Brain path ──────────────────────────────────────────────────────────────
+// ─── Sideways brain path (90° CW rotation of top-view brain) ─────────────────
+//
+// Original top-view brain: two hemispheres left/right, fissure vertical.
+// After 90° CW rotation (x,y)→(y,−x): two lobes top/bottom, fissure horizontal.
+// Radii rx, ry control half-width and half-height of the overall shape.
 
-function drawBrainPath(
+function drawSidewaysBrainPath(
   ctx: CanvasRenderingContext2D,
   cx: number, cy: number,
   rx: number, ry: number,
@@ -71,46 +79,41 @@ function drawBrainPath(
   const py = (t: number) => cy + t * ry;
 
   ctx.beginPath();
-  ctx.moveTo(px(-0.08), py(-0.68));
+  ctx.moveTo(px(-0.68), py( 0.08));
 
-  // upper-left — frontal lobe
-  ctx.bezierCurveTo(px(-0.30), py(-1.05), px(-0.72), py(-1.00), px(-0.95), py(-0.58));
-  // left side — temporal / parietal
-  ctx.bezierCurveTo(px(-1.12), py(-0.20), px(-1.10), py( 0.25), px(-0.92), py( 0.62));
-  // lower-left — occipital
-  ctx.bezierCurveTo(px(-0.72), py( 0.98), px(-0.30), py( 1.05), px(-0.08), py( 0.72));
-  // bottom fissure notch
-  ctx.bezierCurveTo(px(-0.04), py( 0.76), px( 0.04), py( 0.76), px( 0.08), py( 0.72));
-  // lower-right — mirror
-  ctx.bezierCurveTo(px( 0.30), py( 1.05), px( 0.72), py( 0.98), px( 0.92), py( 0.62));
-  // right side — mirror
-  ctx.bezierCurveTo(px( 1.10), py( 0.25), px( 1.12), py(-0.20), px( 0.95), py(-0.58));
-  // upper-right — mirror
-  ctx.bezierCurveTo(px( 0.72), py(-1.00), px( 0.30), py(-1.05), px( 0.08), py(-0.68));
-  // top fissure notch
-  ctx.bezierCurveTo(px( 0.04), py(-0.72), px(-0.04), py(-0.72), px(-0.08), py(-0.68));
+  // upper-left curve (bottom lobe left side)
+  ctx.bezierCurveTo(px(-1.05), py( 0.30), px(-1.00), py( 0.72), px(-0.58), py( 0.95));
+  // bottom-left corner
+  ctx.bezierCurveTo(px(-0.20), py( 1.12), px( 0.25), py( 1.10), px( 0.62), py( 0.92));
+  // bottom-right corner
+  ctx.bezierCurveTo(px( 0.98), py( 0.72), px( 1.05), py( 0.30), px( 0.72), py( 0.08));
+  // right fissure notch
+  ctx.bezierCurveTo(px( 0.76), py( 0.04), px( 0.76), py(-0.04), px( 0.72), py(-0.08));
+  // upper-right corner (top lobe right side)
+  ctx.bezierCurveTo(px( 1.05), py(-0.30), px( 0.98), py(-0.72), px( 0.62), py(-0.92));
+  // top-right corner
+  ctx.bezierCurveTo(px( 0.25), py(-1.10), px(-0.20), py(-1.12), px(-0.58), py(-0.95));
+  // top-left corner (top lobe left side)
+  ctx.bezierCurveTo(px(-1.00), py(-0.72), px(-1.05), py(-0.30), px(-0.68), py(-0.08));
+  // left fissure notch
+  ctx.bezierCurveTo(px(-0.72), py(-0.04), px(-0.72), py( 0.04), px(-0.68), py( 0.08));
 
   ctx.closePath();
 }
 
 // ─── Shape mask (pixel alpha lookup) ─────────────────────────────────────────
 
-function buildMask(W: number, H: number, shape: Shape): Uint8ClampedArray {
+function buildBrainMask(W: number, H: number): Uint8ClampedArray {
   if (W <= 0 || H <= 0) return new Uint8ClampedArray(0);
   const off = document.createElement('canvas');
   off.width  = W;
   off.height = H;
   const ctx  = off.getContext('2d')!;
-  const cx = W / 2, cy = H / 2;
   ctx.fillStyle = '#000';
-  if (shape === 'fill') {
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, W * 0.44, H * 0.44, 0, 0, Math.PI * 2);
-    ctx.fill();
-  } else {
-    drawBrainPath(ctx, cx, cy, W * 0.44, H * 0.44);
-    ctx.fill();
-  }
+  // Square radii so the brain is always portrait (taller than wide)
+  const r = Math.min(W * 0.42, H * 0.44);
+  drawSidewaysBrainPath(ctx, W / 2, H / 2, r, r);
+  ctx.fill();
   return ctx.getImageData(0, 0, W, H).data;
 }
 
@@ -128,8 +131,8 @@ function renderCloud(canvas: HTMLCanvasElement, wordFreqs: Map<string, number>, 
   if (W <= 0 || H <= 0) return;
 
   const dpr = window.devicePixelRatio || 1;
-  canvas.width  = W * dpr;
-  canvas.height = H * dpr;
+  canvas.width  = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
   canvas.style.width  = `${W}px`;
   canvas.style.height = `${H}px`;
 
@@ -140,56 +143,99 @@ function renderCloud(canvas: HTMLCanvasElement, wordFreqs: Map<string, number>, 
   if (wordFreqs.size === 0) {
     ctx.fillStyle = '#94a3b8';
     ctx.font = '13px -apple-system, sans-serif';
-    ctx.textAlign = 'center';
+    ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('No keywords yet — add cards to see the word cloud', W / 2, H / 2);
     return;
   }
 
-  // Build shape mask at logical (non-DPR) pixel dimensions
-  const mask = buildMask(W, H, shape);
-
   const cx = W / 2, cy = H / 2;
-  const sorted = [...wordFreqs.entries()].sort(([, a], [, b]) => b - a).slice(0, 70);
-  const maxFreq = sorted[0][1];
-  const minFreq = sorted[sorted.length - 1][1];
-  const range   = Math.max(1, maxFreq - minFreq);
+  const sorted   = [...wordFreqs.entries()].sort(([, a], [, b]) => b - a).slice(0, 70);
+  const maxFreq  = sorted[0][1];
+  const minFreq  = sorted[sorted.length - 1][1];
+  const freqRange = Math.max(1, maxFreq - minFreq);
 
   const MIN_PX = 10;
   const MAX_PX = Math.min(56, Math.floor(Math.min(W, H) * 0.15));
 
   const placed: Array<{ x: number; y: number; w: number; h: number }> = [];
-
   ctx.textBaseline = 'top';
 
-  for (const [word, freq] of sorted) {
-    const t  = (freq - minFreq) / range;  // 0 = rarest, 1 = most common
-    const fs = Math.round(MIN_PX + t * (MAX_PX - MIN_PX));
+  // ── Fill mode: words pack into the full canvas rectangle ─────────────────
+  if (shape === 'fill') {
+    const PAD_X  = 12, PAD_Y  = 10;
+    const usableW = W - PAD_X * 2;
+    const usableH = H - PAD_Y * 2;
 
+    // Elliptical spiral scaled so it reaches the edges of usableW × usableH
+    const maxR = Math.max(usableW, usableH) * 0.52;
+    const hStr = (usableW / 2) / maxR;   // horizontal stretch factor
+    const vStr = (usableH / 2) / maxR;   // vertical stretch factor
+
+    for (const [word, freq] of sorted) {
+      const t  = (freq - minFreq) / freqRange;
+      const fs = Math.round(MIN_PX + t * (MAX_PX - MIN_PX));
+      ctx.font = `bold ${fs}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+      const tw = ctx.measureText(word).width + 8;
+      const th = fs * 1.35;
+
+      for (let theta = 0; theta < 18 * Math.PI; theta += 0.06) {
+        const r  = (theta / (18 * Math.PI)) * maxR;
+        const ex = cx + r * hStr * Math.cos(theta * 1.3);
+        const ey = cy + r * vStr * Math.sin(theta * 1.3);
+
+        const tx = Math.round(ex - tw / 2);
+        const ty = Math.round(ey - th / 2);
+
+        if (tx < PAD_X || tx + tw > W - PAD_X) continue;
+        if (ty < PAD_Y || ty + th > H - PAD_Y) continue;
+
+        let hit = false;
+        for (const p of placed) {
+          if (tx < p.x + p.w + 3 && tx + tw > p.x - 3 &&
+              ty < p.y + p.h + 2 && ty + th > p.y - 2) { hit = true; break; }
+        }
+        if (hit) continue;
+
+        ctx.fillStyle = wordColor(word);
+        ctx.fillText(word, tx + 4, ty + 1);
+        placed.push({ x: tx, y: ty, w: tw, h: th });
+        break;
+      }
+    }
+    return;
+  }
+
+  // ── Brain mode: words packed inside sideways-brain silhouette ────────────
+  const mask = buildBrainMask(W, H);
+  // Square radii matching the mask
+  const bR    = Math.min(W * 0.42, H * 0.44);
+  // Spiral — slightly compressed horizontally since the brain is portrait
+  const maxR  = bR * 1.05;
+
+  for (const [word, freq] of sorted) {
+    const t  = (freq - minFreq) / freqRange;
+    const fs = Math.round(MIN_PX + t * (MAX_PX - MIN_PX));
     ctx.font = `bold ${fs}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
     const tw = ctx.measureText(word).width + 8;
     const th = fs * 1.35;
 
-    const maxR = Math.min(W, H) * 0.48;
-    let ok = false;
-
-    // Archimedean spiral outward from centre
     for (let theta = 0; theta < 15 * Math.PI; theta += 0.08) {
       const r  = (theta / (15 * Math.PI)) * maxR;
-      const ex = cx + r * Math.cos(theta * 1.4);
-      const ey = cy + r * 0.85 * Math.sin(theta * 1.4);
+      // slight horizontal compression to match portrait brain shape
+      const ex = cx + r * 0.92 * Math.cos(theta * 1.3);
+      const ey = cy + r *         Math.sin(theta * 1.3);
 
       const tx = Math.round(ex - tw / 2);
       const ty = Math.round(ey - th / 2);
 
-      // All corners + centre must be inside the shape
-      if (!inMask(mask, W, H, tx,           ty          )) continue;
-      if (!inMask(mask, W, H, tx + tw,      ty          )) continue;
-      if (!inMask(mask, W, H, tx,           ty + th     )) continue;
-      if (!inMask(mask, W, H, tx + tw,      ty + th     )) continue;
-      if (!inMask(mask, W, H, tx + tw / 2,  ty + th / 2 )) continue;
+      // All four corners + centre must lie inside the brain mask
+      if (!inMask(mask, W, H, tx,          ty          )) continue;
+      if (!inMask(mask, W, H, tx + tw,     ty          )) continue;
+      if (!inMask(mask, W, H, tx,          ty + th     )) continue;
+      if (!inMask(mask, W, H, tx + tw,     ty + th     )) continue;
+      if (!inMask(mask, W, H, tx + tw / 2, ty + th / 2 )) continue;
 
-      // Bounding-box collision
       let hit = false;
       for (const p of placed) {
         if (tx < p.x + p.w + 3 && tx + tw > p.x - 3 &&
@@ -200,27 +246,22 @@ function renderCloud(canvas: HTMLCanvasElement, wordFreqs: Map<string, number>, 
       ctx.fillStyle = wordColor(word);
       ctx.fillText(word, tx + 4, ty + 1);
       placed.push({ x: tx, y: ty, w: tw, h: th });
-      ok = true;
       break;
     }
-    // Words that don't fit are silently skipped
-    void ok;
   }
 
-  // Brain mode: draw a subtle outline + fissure
-  if (shape === 'brain') {
-    ctx.strokeStyle = 'rgba(91,79,207,0.14)';
-    ctx.lineWidth   = 1.5;
-    drawBrainPath(ctx, cx, cy, W * 0.44, H * 0.44);
-    ctx.stroke();
+  // Draw a subtle brain outline + horizontal interhemispheric fissure line
+  ctx.strokeStyle = 'rgba(91,79,207,0.14)';
+  ctx.lineWidth   = 1.5;
+  drawSidewaysBrainPath(ctx, cx, cy, bR, bR);
+  ctx.stroke();
 
-    ctx.strokeStyle = 'rgba(91,79,207,0.10)';
-    ctx.lineWidth   = 1;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - H * 0.44 * 0.68);
-    ctx.bezierCurveTo(cx - 5, cy - H * 0.15, cx + 5, cy + H * 0.15, cx, cy + H * 0.44 * 0.72);
-    ctx.stroke();
-  }
+  ctx.strokeStyle = 'rgba(91,79,207,0.10)';
+  ctx.lineWidth   = 1;
+  ctx.beginPath();
+  ctx.moveTo(cx - bR * 0.68, cy);
+  ctx.bezierCurveTo(cx - bR * 0.18, cy - 4, cx + bR * 0.18, cy + 4, cx + bR * 0.72, cy);
+  ctx.stroke();
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
