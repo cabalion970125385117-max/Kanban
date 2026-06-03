@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Users, User, ChevronDown, X, LayoutList, Kanban, Rows3, LayoutDashboard } from 'lucide-react';
 import { useBoardMembers, useBoardLabels } from '@/hooks/useBoard';
 import { useAuthStore } from '@/stores/auth.store';
@@ -39,28 +40,47 @@ function Dropdown({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [panelPos, setPanelPos] = useState<{ top: number; left: number } | null>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const panelRef   = useRef<HTMLDivElement>(null);
 
+  // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (
+        triggerRef.current?.contains(e.target as Node) ||
+        panelRef.current?.contains(e.target as Node)
+      ) return;
+      setOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  const handleOpen = () => {
+    if (!open && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      // position: fixed → coords relative to viewport, no scroll offset needed
+      setPanelPos({ top: rect.bottom + 4, left: rect.left });
+    }
+    setOpen((o) => !o);
+  };
+
   return (
-    <div className="relative" ref={ref}>
-      <div onClick={() => setOpen((o) => !o)}>{trigger}</div>
-      {open && (
+    <>
+      <div ref={triggerRef} onClick={handleOpen}>{trigger}</div>
+      {open && panelPos && createPortal(
         <div
-          className="absolute left-0 top-full mt-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-lg z-30 min-w-[160px]"
+          ref={panelRef}
+          style={{ position: 'fixed', top: panelPos.top, left: panelPos.left, zIndex: 200 }}
+          className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-lg min-w-[160px]"
           onClick={() => setOpen(false)}
         >
           {children}
-        </div>
+        </div>,
+        document.body,
       )}
-    </div>
+    </>
   );
 }
 
