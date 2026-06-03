@@ -9,7 +9,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import type { Card } from '@questboard/shared';
 
-type Shape = 'normal' | 'brain';
+type Shape = 'fill' | 'brain';
 
 // ─── Stop words ──────────────────────────────────────────────────────────────
 
@@ -103,7 +103,7 @@ function buildMask(W: number, H: number, shape: Shape): Uint8ClampedArray {
   const ctx  = off.getContext('2d')!;
   const cx = W / 2, cy = H / 2;
   ctx.fillStyle = '#000';
-  if (shape === 'normal') {
+  if (shape === 'fill') {
     ctx.beginPath();
     ctx.ellipse(cx, cy, W * 0.44, H * 0.44, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -230,7 +230,7 @@ interface MindmapWidgetProps {
 }
 
 export function MindmapWidget({ cards }: MindmapWidgetProps) {
-  const [shape, setShape] = useState<Shape>('normal');
+  const [shape, setShape] = useState<Shape>('fill');
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -261,21 +261,20 @@ export function MindmapWidget({ cards }: MindmapWidgetProps) {
         <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
           Shape
         </span>
-        {(['normal', 'brain'] as const).map((s) => (
-          <button
-            key={s}
-            onClick={() => setShape(s)}
-            className={cn(
-              'flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border transition-colors',
-              shape === s
-                ? 'bg-[var(--color-accent)] text-white border-[var(--color-accent)] shadow-sm'
-                : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-text)]',
-            )}
-          >
-            {s === 'normal' ? '◎' : '🧠'}
-            <span className="capitalize">{s}</span>
-          </button>
-        ))}
+        <select
+          value={shape}
+          onChange={(e) => setShape(e.target.value as Shape)}
+          className={cn(
+            'text-xs border border-[var(--color-border)] rounded-lg px-2 py-1',
+            'bg-[var(--color-surface)] text-[var(--color-text)]',
+            'focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]',
+            'cursor-pointer',
+          )}
+          aria-label="Word cloud shape"
+        >
+          <option value="fill">◎ Fill</option>
+          <option value="brain">🧠 Brain</option>
+        </select>
         {totalWords > 0 && (
           <div className="ml-auto flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
             {topWord && (

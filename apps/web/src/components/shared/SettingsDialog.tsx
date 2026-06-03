@@ -277,10 +277,10 @@ export function SettingsDialog() {
                 </button>
               ))}
 
-              {/* ── RPG Mode toggle ── */}
+              {/* ── Word Cloud Banner toggle ── */}
               <div className="pt-4 border-t border-[var(--color-border)]">
                 <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">
-                  RPG Mode
+                  Word Cloud Banner
                 </p>
                 <button
                   type="button"
@@ -292,13 +292,13 @@ export function SettingsDialog() {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-xl">⚔️</span>
+                    <span className="text-xl">☁️</span>
                     <div>
-                      <p className="text-sm font-medium text-[var(--color-text)]">RPG Mode</p>
+                      <p className="text-sm font-medium text-[var(--color-text)]">Word Cloud Banner</p>
                       <p className="text-xs text-[var(--color-text-muted)]">
                         {questEnabled
-                          ? 'On — monsters march from cave to castle'
-                          : 'Off — animated banner is hidden'}
+                          ? 'On — keyword cloud shown above every board'
+                          : 'Off — banner is hidden'}
                       </p>
                     </div>
                   </div>
@@ -316,8 +316,8 @@ export function SettingsDialog() {
                   </div>
                 </button>
                 <p className="text-xs text-[var(--color-text-muted)] mt-2 px-1">
-                  Each open card spawns a monster that marches toward the castle based on due-date urgency.
-                  Board members appear as armoured guards on the battlements.
+                  Aggregates keywords from card titles and tags across all your boards.
+                  Refreshed once per day — larger words appear more frequently in your cards.
                 </p>
               </div>
             </div>
