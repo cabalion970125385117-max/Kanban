@@ -201,6 +201,20 @@ export interface BoardTagRow {
   created_at: string;
 }
 
+export interface DashboardLayoutRow {
+  id: string;           // board_id used as primary key (one layout per board)
+  board_id: string;
+  widgets: string;      // JSON: WidgetConfig[]
+  updated_at: string;
+}
+
+export interface DashboardShareRow {
+  id: string;
+  token: string;        // UUID — used in the public share URL
+  board_id: string;
+  created_at: string;
+}
+
 // ─── DB Schema ────────────────────────────────────────────────────────────────
 
 interface QBSchema extends DBSchema {
@@ -303,10 +317,19 @@ interface QBSchema extends DBSchema {
     value: BoardTagRow;
     indexes: { 'by-board': string };
   };
+  dashboard_layouts: {
+    key: string;      // board_id
+    value: DashboardLayoutRow;
+  };
+  dashboard_shares: {
+    key: string;
+    value: DashboardShareRow;
+    indexes: { 'by-token': string; 'by-board': string };
+  };
 }
 
 const DB_NAME = 'questboard';
-const DB_VERSION = 8; // v8 adds board_tags
+const DB_VERSION = 9; // v9 adds dashboard_layouts + dashboard_shares
 
 let _db: Promise<IDBPDatabase<QBSchema>> | null = null;
 
@@ -402,6 +425,15 @@ export function getDB(): Promise<IDBPDatabase<QBSchema>> {
         if (oldVersion < 8) {
           const bt = db.createObjectStore('board_tags', { keyPath: 'id' });
           bt.createIndex('by-board', 'board_id', { unique: false });
+        }
+
+        // ── v9 stores (dashboard layouts + share tokens) ──────────────────────
+        if (oldVersion < 9) {
+          // keyed by board_id so there's one layout per board
+          db.createObjectStore('dashboard_layouts', { keyPath: 'id' });
+          const ds = db.createObjectStore('dashboard_shares', { keyPath: 'id' });
+          ds.createIndex('by-token', 'token', { unique: true });
+          ds.createIndex('by-board', 'board_id', { unique: false });
         }
       },
     });

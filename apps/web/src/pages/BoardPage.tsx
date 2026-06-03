@@ -4,6 +4,7 @@ import { BoardHeader } from '@/components/board/BoardHeaderV2';
 import { BoardCanvas } from '@/components/board/BoardCanvas';
 import { TableView } from '@/components/board/TableView';
 import { SwimlaneCanvas } from '@/components/board/SwimlaneCanvas';
+import { DashboardView } from '@/components/dashboard/DashboardView';
 import { FilterBar } from '@/components/board/FilterBar';
 import { InboxColumn } from '@/components/board/InboxColumn';
 import { CardDetailDrawer } from '@/components/card/CardDetailDrawer';
@@ -123,6 +124,9 @@ export function BoardPage() {
               filters={filters}
               groupBy={swimlaneGroupBy}
             />
+          )}
+          {view === 'dashboard' && board && (
+            <DashboardView boardId={boardId} boardName={board.name} />
           )}
         </div>
       </main>

@@ -22,7 +22,8 @@ const BoardPage        = lazy(() => import('@/pages/BoardPage').then(m => ({ def
 const GanttPage        = lazy(() => import('@/pages/GanttPage').then(m => ({ default: m.GanttPage })));
 const AutomationPage   = lazy(() => import('@/pages/AutomationPage').then(m => ({ default: m.AutomationPage })));
 const AnalyticsPage    = lazy(() => import('@/pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })));
-const MaintenancePage  = lazy(() => import('@/pages/MaintenancePage').then(m => ({ default: m.MaintenancePage })));
+const MaintenancePage        = lazy(() => import('@/pages/MaintenancePage').then(m => ({ default: m.MaintenancePage })));
+const SharedDashboardPage    = lazy(() => import('@/pages/SharedDashboardPage').then(m => ({ default: m.SharedDashboardPage })));
 
 function PageFallback() {
   return (
@@ -67,6 +68,8 @@ export function App() {
           <MaintenanceBanner />
           <Suspense fallback={<PageFallback />}>
           <Routes>
+            {/* Public routes — no auth required */}
+            <Route path="/share/:token" element={<SharedDashboardPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />

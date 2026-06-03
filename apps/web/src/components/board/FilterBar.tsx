@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Users, User, ChevronDown, X, LayoutList, Kanban, Rows3 } from 'lucide-react';
+import { Users, User, ChevronDown, X, LayoutList, Kanban, Rows3, LayoutDashboard } from 'lucide-react';
 import { useBoardMembers, useBoardLabels } from '@/hooks/useBoard';
 import { useAuthStore } from '@/stores/auth.store';
 import { cn } from '@/lib/utils';
@@ -11,7 +11,7 @@ export interface ActiveFilters {
   labelId: string | null;
 }
 
-export type BoardView = 'kanban' | 'table' | 'swimlane';
+export type BoardView = 'kanban' | 'table' | 'swimlane' | 'dashboard';
 export type SwimlaneGroupBy = 'priority' | 'assignee';
 
 interface FilterBarProps {
@@ -274,9 +274,10 @@ export function FilterBar({
 
       {/* View toggle */}
       <div className="flex items-center gap-0.5 border border-[var(--color-border)] rounded-lg p-0.5 flex-shrink-0">
-        {viewBtn('kanban', <Kanban className="h-3.5 w-3.5" />, 'Kanban view')}
-        {viewBtn('swimlane', <Rows3 className="h-3.5 w-3.5" />, 'Swimlane view')}
-        {viewBtn('table', <LayoutList className="h-3.5 w-3.5" />, 'Table view')}
+        {viewBtn('kanban',    <Kanban          className="h-3.5 w-3.5" />, 'Kanban view')}
+        {viewBtn('swimlane',  <Rows3           className="h-3.5 w-3.5" />, 'Swimlane view')}
+        {viewBtn('table',     <LayoutList      className="h-3.5 w-3.5" />, 'Table view')}
+        {viewBtn('dashboard', <LayoutDashboard className="h-3.5 w-3.5" />, 'Dashboard view')}
       </div>
     </div>
   );
