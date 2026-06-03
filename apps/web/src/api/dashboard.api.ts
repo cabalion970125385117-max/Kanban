@@ -13,7 +13,10 @@ export type WidgetType =
   | 'by-priority'
   | 'by-assignee'
   | 'progress'
-  | 'recent-activity';
+  | 'recent-activity'
+  | 'word-summary'
+  | 'avg-close-time'
+  | 'upcoming-due';
 
 export interface WidgetConfig {
   id: string;
@@ -30,12 +33,15 @@ export const DEFAULT_WIDGETS: WidgetConfig[] = [
 ];
 
 export const WIDGET_META: Record<WidgetType, { label: string; description: string }> = {
-  'kpi-summary':     { label: 'KPI Summary',       description: 'Total cards, done %, overdue count' },
-  'by-status':       { label: 'Cards by Status',   description: 'Bar chart: cards per column' },
-  'by-priority':     { label: 'Priority Breakdown',description: 'Cards grouped by priority' },
-  'by-assignee':     { label: 'Assignee Workload', description: 'Card count per team member' },
-  'progress':        { label: 'Column Progress',   description: 'Completion bars per column' },
-  'recent-activity': { label: 'Recent Activity',   description: 'Most recently updated cards' },
+  'kpi-summary':     { label: 'KPI Summary',          description: 'Total cards, done %, overdue count' },
+  'by-status':       { label: 'Cards by Status',      description: 'Bar chart: cards per column' },
+  'by-priority':     { label: 'Priority Breakdown',   description: 'Cards grouped by priority' },
+  'by-assignee':     { label: 'Assignee Workload',    description: 'Card count per team member' },
+  'progress':        { label: 'Column Progress',      description: 'Completion bars per column' },
+  'recent-activity': { label: 'Recent Activity',      description: 'Most recently updated cards' },
+  'word-summary':    { label: 'Word Summary',         description: 'Prose snapshot of board health' },
+  'avg-close-time':  { label: 'Avg Close Time',       description: 'Average time to close cards per user' },
+  'upcoming-due':    { label: 'Upcoming Due',         description: 'Cards due in the next 14 days' },
 };
 
 // ─── Layout CRUD ──────────────────────────────────────────────────────────────

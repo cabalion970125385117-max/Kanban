@@ -26,6 +26,9 @@ import { ByPriorityWidget } from './widgets/ByPriorityWidget';
 import { ByAssigneeWidget } from './widgets/ByAssigneeWidget';
 import { ProgressWidget } from './widgets/ProgressWidget';
 import { RecentActivityWidget } from './widgets/RecentActivityWidget';
+import { WordSummaryWidget } from './widgets/WordSummaryWidget';
+import { AvgCloseTimeWidget } from './widgets/AvgCloseTimeWidget';
+import { UpcomingDueWidget } from './widgets/UpcomingDueWidget';
 
 // ─── Render widget content ────────────────────────────────────────────────────
 
@@ -37,6 +40,9 @@ function WidgetContent({ type, data }: { type: WidgetConfig['type']; data: Dashb
     case 'by-assignee':     return <ByAssigneeWidget cards={data.cards} members={data.members} />;
     case 'progress':        return <ProgressWidget cards={data.cards} columns={data.columns} />;
     case 'recent-activity': return <RecentActivityWidget cards={data.cards} columns={data.columns} />;
+    case 'word-summary':    return <WordSummaryWidget cards={data.cards} columns={data.columns} members={data.members} boardName={data.board.name} />;
+    case 'avg-close-time':  return <AvgCloseTimeWidget cards={data.cards} columns={data.columns} members={data.members} />;
+    case 'upcoming-due':    return <UpcomingDueWidget cards={data.cards} columns={data.columns} />;
     default: return null;
   }
 }
