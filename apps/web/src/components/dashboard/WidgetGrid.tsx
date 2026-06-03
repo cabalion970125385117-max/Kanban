@@ -29,6 +29,8 @@ import { RecentActivityWidget } from './widgets/RecentActivityWidget';
 import { WordSummaryWidget } from './widgets/WordSummaryWidget';
 import { AvgCloseTimeWidget } from './widgets/AvgCloseTimeWidget';
 import { UpcomingDueWidget } from './widgets/UpcomingDueWidget';
+import { RecentCommentsWidget } from './widgets/RecentCommentsWidget';
+import { TrendAnalysisWidget } from './widgets/TrendAnalysisWidget';
 
 // ─── Render widget content ────────────────────────────────────────────────────
 
@@ -43,6 +45,8 @@ function WidgetContent({ type, data }: { type: WidgetConfig['type']; data: Dashb
     case 'word-summary':    return <WordSummaryWidget cards={data.cards} columns={data.columns} members={data.members} boardName={data.board.name} />;
     case 'avg-close-time':  return <AvgCloseTimeWidget cards={data.cards} columns={data.columns} members={data.members} />;
     case 'upcoming-due':    return <UpcomingDueWidget cards={data.cards} columns={data.columns} />;
+    case 'recent-comments': return <RecentCommentsWidget comments={data.recentComments} />;
+    case 'trend-analysis':  return <TrendAnalysisWidget cards={data.cards} columns={data.columns} />;
     default: return null;
   }
 }
