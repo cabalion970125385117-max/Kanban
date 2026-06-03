@@ -15,7 +15,7 @@ router.get(
   validate(listUsersQuerySchema, 'query'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { page, limit, search, role, status } = req.query as {
+      const { page, limit, search, role, status } = req.query as unknown as {
         page: number;
         limit: number;
         search?: string;
