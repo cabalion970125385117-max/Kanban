@@ -3,7 +3,14 @@ import { toast } from 'sonner';
 import * as cardsApi from '@/api/cards.api';
 import { useBoardStore } from '@/stores/board.store';
 import { triggerAutomation } from '@/lib/automation/engine';
-import type { UpdateCardInput, MoveCardInput } from '@questboard/shared';
+import type { UpdateCardInput, MoveCardInput, Priority } from '@questboard/shared';
+
+export interface CloneOptions {
+  substeps: boolean;
+  assignees: boolean;
+  labels: boolean;
+  tags: boolean;
+}
 
 export function useUpdateCard(boardId: string) {
   const qc = useQueryClient();
@@ -81,6 +88,71 @@ export function useMoveCard(boardId: string) {
       // Rollback optimistic update
       qc.invalidateQueries({ queryKey: ['cards', boardId] });
       toast.error('Failed to move card');
+    },
+  });
+}
+
+export function useCloneCard(boardId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sourceCardId, options }: { sourceCardId: string; options: CloneOptions }) =>
+      cardsApi.cloneCard(sourceCardId, options),
+    onSuccess: (card) => {
+      useBoardStore.getState().addCard(card);
+      qc.invalidateQueries({ queryKey: ['cards', boardId] });
+      toast.success('Card duplicated');
+    },
+    onError: () => toast.error('Failed to duplicate card'),
+  });
+}
+
+export function useBulkMoveCards(boardId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ cardIds, columnId }: { cardIds: string[]; columnId: string }) =>
+      cardsApi.bulkMoveCards(cardIds, columnId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['cards', boardId] });
+      toast.success('Cards moved');
+    },
+    onError: () => toast.error('Failed to move cards'),
+  });
+}
+
+export function useBulkArchiveCards(boardId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ cardIds }: { cardIds: string[] }) =>
+      cardsApi.bulkArchiveCards(cardIds),
+    onMutate: ({ cardIds }) => {
+      for (const id of cardIds) useBoardStore.getState().archiveCard(id);
+    },
+    onSuccess: (_, { cardIds }) => {
+      qc.invalidateQueries({ queryKey: ['cards', boardId] });
+      toast.success(`${cardIds.length} cards archived`);
+    },
+    onError: () => {
+      qc.invalidateQueries({ queryKey: ['cards', boardId] });
+      toast.error('Failed to archive cards');
+    },
+  });
+}
+
+export function useBulkSetPriority(boardId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ cardIds, priority }: { cardIds: string[]; priority: Priority }) =>
+      cardsApi.bulkSetPriority(cardIds, priority),
+    onMutate: ({ cardIds, priority }) => {
+      for (const id of cardIds) useBoardStore.getState().updateCard(id, { priority });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['cards', boardId] });
+      toast.success('Priority updated');
+    },
+    onError: () => {
+      qc.invalidateQueries({ queryKey: ['cards', boardId] });
+      toast.error('Failed to update priority');
     },
   });
 }

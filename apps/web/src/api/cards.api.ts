@@ -221,6 +221,77 @@ export async function moveCard(cardId: string, data: MoveCardInput): Promise<Car
   return enrichCard(moved!);
 }
 
+/** Clone a card, optionally copying substeps / assignees / labels / tags. */
+export async function cloneCard(
+  sourceCardId: string,
+  options: { substeps: boolean; assignees: boolean; labels: boolean; tags: boolean },
+): Promise<Card> {
+  const db = await getDB();
+  const source = await db.get('cards', sourceCardId);
+  if (!source) throw makeError('Source card not found', 404);
+
+  const newId = uid();
+  const newRow: CardRow = {
+    ...source,
+    id: newId,
+    title: `${source.title} (copy)`,
+    order_index: 0,
+    archived_at: null,
+    created_at: now(),
+    updated_at: now(),
+    owner_ids: options.assignees ? [...source.owner_ids] : [],
+    label_ids: options.labels ? [...source.label_ids] : [],
+    card_tags: options.tags ? [...(source.card_tags ?? [])] : [],
+  };
+  await db.put('cards', newRow);
+
+  // Clone substeps if requested
+  if (options.substeps) {
+    const substeps = await db.getAllFromIndex('substeps', 'by-card', sourceCardId);
+    for (const s of substeps) {
+      await db.put('substeps', {
+        ...s,
+        id: uid(),
+        card_id: newId,
+        is_complete: false,
+        created_at: now(),
+      });
+    }
+  }
+
+  return enrichCard(newRow);
+}
+
+/** Move multiple cards to a column (bulk). */
+export async function bulkMoveCards(cardIds: string[], columnId: string): Promise<void> {
+  const db = await getDB();
+  const existing = await db.getAllFromIndex('cards', 'by-column', columnId);
+  let nextOrder = existing.filter((c) => !c.archived_at).length;
+  for (const id of cardIds) {
+    const row = await db.get('cards', id);
+    if (!row) continue;
+    await db.put('cards', { ...row, column_id: columnId, order_index: nextOrder++, updated_at: now() });
+  }
+}
+
+/** Archive multiple cards (bulk). */
+export async function bulkArchiveCards(cardIds: string[]): Promise<void> {
+  const db = await getDB();
+  for (const id of cardIds) {
+    const row = await db.get('cards', id);
+    if (row) await db.put('cards', { ...row, archived_at: now() });
+  }
+}
+
+/** Set priority on multiple cards (bulk). */
+export async function bulkSetPriority(cardIds: string[], priority: import('@questboard/shared').Priority): Promise<void> {
+  const db = await getDB();
+  for (const id of cardIds) {
+    const row = await db.get('cards', id);
+    if (row) await db.put('cards', { ...row, priority, updated_at: now() });
+  }
+}
+
 /** Collect all unique tags used across a board (for autocomplete). */
 export async function getBoardTags(boardId: string): Promise<string[]> {
   const db = await getDB();

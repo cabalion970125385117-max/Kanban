@@ -7,6 +7,13 @@ interface BoardState {
   cards: Record<string, Card[]>; // keyed by column_id
   labels: Label[];
 
+  // ── Bulk selection ─────────────────────────────────────────────────────────
+  bulkMode: boolean;
+  selectedCardIds: string[];
+  setBulkMode: (enabled: boolean) => void;
+  setSelectedCardIds: (ids: string[]) => void;
+  toggleCardSelection: (cardId: string) => void;
+
   setBoard: (board: Board) => void;
   setColumns: (columns: Column[]) => void;
   setAllCards: (cardsByColumn: Record<string, Card[]>) => void;
@@ -39,6 +46,18 @@ export const useBoardStore = create<BoardState>((set) => ({
   columns: [],
   cards: {},
   labels: [],
+
+  // Bulk selection
+  bulkMode: false,
+  selectedCardIds: [],
+  setBulkMode: (enabled) => set({ bulkMode: enabled, selectedCardIds: enabled ? [] : [] }),
+  setSelectedCardIds: (ids) => set({ selectedCardIds: ids }),
+  toggleCardSelection: (cardId) =>
+    set((s) => ({
+      selectedCardIds: s.selectedCardIds.includes(cardId)
+        ? s.selectedCardIds.filter((id) => id !== cardId)
+        : [...s.selectedCardIds, cardId],
+    })),
 
   setBoard: (board) => set({ activeBoard: board }),
   setColumns: (columns) => set({ columns }),
@@ -118,5 +137,5 @@ export const useBoardStore = create<BoardState>((set) => ({
       return { columns: cols };
     }),
 
-  clear: () => set({ activeBoard: null, columns: [], cards: {}, labels: [] }),
+  clear: () => set({ activeBoard: null, columns: [], cards: {}, labels: [], bulkMode: false, selectedCardIds: [] }),
 }));

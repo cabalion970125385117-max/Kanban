@@ -8,32 +8,32 @@ import { DashboardView } from '@/components/dashboard/DashboardView';
 import { FilterBar } from '@/components/board/FilterBar';
 import { InboxColumn } from '@/components/board/InboxColumn';
 import { CardDetailDrawer } from '@/components/card/CardDetailDrawer';
+import { BulkActionBar } from '@/components/board/BulkActionBar';
+import { StandupMode } from '@/components/board/StandupMode';
 import { LiveCursorLayer } from '@/components/collaboration/LiveCursorLayer';
 import { AppWordCloudBanner } from '@/components/shared/AppWordCloudBanner';
 import { useBoard } from '@/hooks/useBoard';
 import { useBoardSocket } from '@/hooks/useSocket';
 import { useBoardStore } from '@/stores/board.store';
 import type { ActiveFilters, BoardView, SwimlaneGroupBy } from '@/components/board/FilterBar';
+import type { Card } from '@questboard/shared';
 
 export function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
-  // Store only the ID — derive the live card from the board store so the
-  // drawer always reflects the latest owners, labels, and other mutations
-  // made while the drawer is open.
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [filters, setFilters] = useState<ActiveFilters>({ userId: null, priority: null, labelId: null });
   const [view, setView] = useState<BoardView>('kanban');
   const [swimlaneGroupBy, setSwimlaneGroupBy] = useState<SwimlaneGroupBy>('priority');
+  const [standupOpen, setStandupOpen] = useState(false);
 
   const { boardQuery, isLoading } = useBoard(boardId ?? '');
   const { emitCursor, emitTypingStart, emitTypingStop } = useBoardSocket(boardId);
 
   const storeCards = useBoardStore((s) => s.cards);
   const clear = useBoardStore((s) => s.clear);
+  const bulkMode = useBoardStore((s) => s.bulkMode);
 
-  // Live-derived selected card — auto-updates whenever the store mutates
-  // (e.g. addCardOwner, removeCardOwner, updateCard).
   const selectedCard = useMemo(() => {
     if (!selectedCardId) return null;
     for (const colCards of Object.values(storeCards)) {
@@ -47,12 +47,28 @@ export function BoardPage() {
     return () => { clear(); };
   }, [boardId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Escape key clears bulk mode
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && bulkMode) {
+        useBoardStore.getState().setBulkMode(false);
+        useBoardStore.getState().setSelectedCardIds([]);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [bulkMode]);
+
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
       emitCursor(e.clientX, e.clientY);
     },
     [emitCursor],
   );
+
+  const handleOpenCard = useCallback((card: Card) => {
+    setSelectedCardId(card.id);
+  }, []);
 
   if (!boardId) {
     navigate('/boards');
@@ -94,7 +110,7 @@ export function BoardPage() {
       className="h-screen flex flex-col bg-[var(--color-bg)] overflow-hidden"
       onMouseMove={handleMouseMove}
     >
-      {board && <BoardHeader board={board} />}
+      {board && <BoardHeader board={board} onStandupClick={() => setStandupOpen(true)} />}
 
       <AppWordCloudBanner />
 
@@ -103,7 +119,11 @@ export function BoardPage() {
         filters={filters}
         onFiltersChange={setFilters}
         view={view}
-        onViewChange={setView}
+        onViewChange={(v) => {
+          setView(v);
+          if (v === 'calendar') navigate(`/boards/${boardId}/calendar`);
+          if (v === 'roadmap') navigate(`/boards/${boardId}/roadmap`);
+        }}
         swimlaneGroupBy={swimlaneGroupBy}
         onSwimlaneGroupByChange={setSwimlaneGroupBy}
       />
@@ -135,9 +155,16 @@ export function BoardPage() {
         card={selectedCard}
         boardId={boardId}
         onClose={() => setSelectedCardId(null)}
+        onOpenCard={handleOpenCard}
         emitTypingStart={emitTypingStart}
         emitTypingStop={emitTypingStop}
       />
+
+      {/* Bulk action floating bar */}
+      {boardId && <BulkActionBar boardId={boardId} />}
+
+      {/* Standup mode overlay */}
+      {standupOpen && <StandupMode onClose={() => setStandupOpen(false)} />}
 
       <LiveCursorLayer />
     </div>

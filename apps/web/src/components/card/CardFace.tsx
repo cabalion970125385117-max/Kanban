@@ -4,6 +4,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PriorityBadge } from '@/components/shared/PriorityBadge';
+import { ReactionBar } from './ReactionBar';
+import { useBoardStore } from '@/stores/board.store';
 import type { Card } from '@questboard/shared';
 
 interface CardFaceProps {
@@ -21,6 +23,9 @@ export const CardFace = memo(function CardFace({ card, onClick, isDragOverlay = 
     id: card.id,
     data: { type: 'card', card },
   });
+
+  const { bulkMode, selectedCardIds, toggleCardSelection } = useBoardStore();
+  const isSelected = selectedCardIds.includes(card.id);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -45,22 +50,53 @@ export const CardFace = memo(function CardFace({ card, onClick, isDragOverlay = 
     .filter(Boolean)
     .join(', ');
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (bulkMode) {
+      e.stopPropagation();
+      toggleCardSelection(card.id);
+      return;
+    }
+    onClick(card);
+  };
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
+      {...(bulkMode ? {} : listeners)}
       aria-label={ariaLabel}
       role="listitem"
-      onClick={() => onClick(card)}
+      onClick={handleClick}
       className={cn(
         'bg-[var(--color-surface)] rounded-lg card-shadow cursor-pointer select-none overflow-hidden',
-        'border border-transparent hover:border-[var(--color-accent)]/30',
+        'border transition-all',
+        isSelected
+          ? 'border-[var(--color-accent)] ring-2 ring-[var(--color-accent)]/30'
+          : 'border-transparent hover:border-[var(--color-accent)]/30',
         isDragging && 'opacity-40',
         isDragOverlay && 'rotate-1 shadow-xl',
       )}
     >
+      {/* Bulk selection checkbox */}
+      {bulkMode && (
+        <div className="absolute top-2 left-2 z-10">
+          <div
+            className={cn(
+              'w-4 h-4 rounded border-2 flex items-center justify-center transition-colors',
+              isSelected
+                ? 'bg-[var(--color-accent)] border-[var(--color-accent)]'
+                : 'bg-[var(--color-surface)] border-[var(--color-border)]',
+            )}
+          >
+            {isSelected && (
+              <svg viewBox="0 0 10 10" className="w-2.5 h-2.5 text-white" fill="currentColor">
+                <path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+              </svg>
+            )}
+          </div>
+        </div>
+      )}
       {/* Cover color stripe */}
       {hasCover && (
         <div className="h-1.5 w-full" style={{ backgroundColor: card.cover_colour! }} />
@@ -181,6 +217,9 @@ export const CardFace = memo(function CardFace({ card, onClick, isDragOverlay = 
             </div>
           )}
         </div>
+
+        {/* Compact reaction pills */}
+        <ReactionBar cardId={card.id} compact />
       </div>
     </div>
   );

@@ -24,6 +24,8 @@ const AutomationPage   = lazy(() => import('@/pages/AutomationPage').then(m => (
 const AnalyticsPage    = lazy(() => import('@/pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })));
 const MaintenancePage        = lazy(() => import('@/pages/MaintenancePage').then(m => ({ default: m.MaintenancePage })));
 const SharedDashboardPage    = lazy(() => import('@/pages/SharedDashboardPage').then(m => ({ default: m.SharedDashboardPage })));
+const CalendarPage           = lazy(() => import('@/pages/CalendarPage').then(m => ({ default: m.CalendarPage })));
+const MyWorkPage             = lazy(() => import('@/pages/MyWorkPage').then(m => ({ default: m.MyWorkPage })));
 
 function PageFallback() {
   return (
@@ -79,6 +81,8 @@ export function App() {
               <Route path="/boards/:boardId/gantt" element={<GanttPage />} />
               <Route path="/boards/:boardId/automation" element={<AutomationPage />} />
               <Route path="/boards/:boardId/analytics" element={<AnalyticsPage />} />
+              <Route path="/boards/:boardId/calendar" element={<CalendarPage />} />
+              <Route path="/my-work" element={<MyWorkPage />} />
               <Route element={<AdminRoute />}>
                 <Route path="/maintenance" element={<MaintenancePage />} />
               </Route>

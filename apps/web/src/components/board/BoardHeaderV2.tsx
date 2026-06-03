@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Settings, Bug, Scroll, GanttChartSquare, Kanban, Zap, BarChart3, Users, TrendingUp, Tag } from 'lucide-react';
+import { ArrowLeft, Settings, Bug, Scroll, GanttChartSquare, Kanban, Zap, BarChart3, Users, TrendingUp, Tag, CheckSquare, Presentation, MapIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PresenceBar } from '@/components/collaboration/PresenceBar';
 import { NotificationDrawer } from '@/components/shared/NotificationDrawer';
@@ -10,13 +10,14 @@ import { ProgressReportModal } from './ProgressReportModal';
 import { BoardTagsDialog } from './BoardTagsDialog';
 import { useSettingsStore } from '@/stores/settings.store';
 import { useUiStore } from '@/stores/ui.store';
+import { useBoardStore } from '@/stores/board.store';
 import type { Board } from '@questboard/shared';
 
 interface BoardHeaderProps {
   board: Board;
 }
 
-export function BoardHeader({ board }: BoardHeaderProps) {
+export function BoardHeader({ board, onStandupClick }: BoardHeaderProps & { onStandupClick?: () => void }) {
   const navigate = useNavigate();
   const location = useLocation();
   const isGantt = location.pathname.endsWith('/gantt');
@@ -25,6 +26,7 @@ export function BoardHeader({ board }: BoardHeaderProps) {
   const [membersOpen, setMembersOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [tagsOpen, setTagsOpen] = useState(false);
+  const { bulkMode, setBulkMode, setSelectedCardIds } = useBoardStore();
 
   return (
     <>
@@ -51,6 +53,47 @@ export function BoardHeader({ board }: BoardHeaderProps) {
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
+        {/* Standup mode */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onStandupClick}
+          className="text-white hover:bg-white/10"
+          title="Standup mode"
+          aria-label="Standup mode"
+        >
+          <Presentation className="h-4 w-4" aria-hidden="true" />
+        </Button>
+
+        {/* Bulk select toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            const next = !bulkMode;
+            setBulkMode(next);
+            if (!next) setSelectedCardIds([]);
+          }}
+          className={bulkMode ? 'text-[var(--color-accent)] bg-white/20' : 'text-white hover:bg-white/10'}
+          title={bulkMode ? 'Exit select mode' : 'Select cards'}
+          aria-label={bulkMode ? 'Exit select mode' : 'Select cards'}
+          aria-pressed={bulkMode}
+        >
+          <CheckSquare className="h-4 w-4" aria-hidden="true" />
+        </Button>
+
+        {/* Roadmap */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate(`/boards/${board.id}/roadmap`)}
+          className="text-white hover:bg-white/10"
+          title="Roadmap"
+          aria-label="Roadmap"
+        >
+          <MapIcon className="h-4 w-4" aria-hidden="true" />
+        </Button>
+
         <Button
           variant="ghost"
           size="sm"

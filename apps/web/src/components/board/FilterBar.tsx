@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Users, User, ChevronDown, X, LayoutList, Kanban, Rows3, LayoutDashboard } from 'lucide-react';
+import { Users, User, ChevronDown, X, LayoutList, Kanban, Rows3, LayoutDashboard, CalendarDays } from 'lucide-react';
 import { useBoardMembers, useBoardLabels } from '@/hooks/useBoard';
 import { useAuthStore } from '@/stores/auth.store';
 import { cn } from '@/lib/utils';
@@ -12,7 +12,7 @@ export interface ActiveFilters {
   labelId: string | null;
 }
 
-export type BoardView = 'kanban' | 'table' | 'swimlane' | 'dashboard';
+export type BoardView = 'kanban' | 'table' | 'swimlane' | 'dashboard' | 'calendar' | 'roadmap';
 export type SwimlaneGroupBy = 'priority' | 'assignee';
 
 interface FilterBarProps {
@@ -298,6 +298,7 @@ export function FilterBar({
         {viewBtn('swimlane',  <Rows3           className="h-3.5 w-3.5" />, 'Swimlane view')}
         {viewBtn('table',     <LayoutList      className="h-3.5 w-3.5" />, 'Table view')}
         {viewBtn('dashboard', <LayoutDashboard className="h-3.5 w-3.5" />, 'Dashboard view')}
+        {viewBtn('calendar',  <CalendarDays    className="h-3.5 w-3.5" />, 'Calendar view')}
       </div>
     </div>
   );

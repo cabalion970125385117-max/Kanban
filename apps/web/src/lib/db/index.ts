@@ -215,6 +215,24 @@ export interface DashboardShareRow {
   created_at: string;
 }
 
+export interface CardReactionRow {
+  id: string;
+  card_id: string;
+  user_id: string;
+  emoji: string;
+  created_at: string;
+}
+
+export type DependencyRelType = 'blocks' | 'relates_to' | 'duplicates' | 'child_of';
+
+export interface CardDependencyRow {
+  id: string;
+  card_id: string;       // the card that "owns" this relationship entry
+  related_card_id: string;
+  rel_type: DependencyRelType;
+  created_at: string;
+}
+
 // ─── DB Schema ────────────────────────────────────────────────────────────────
 
 interface QBSchema extends DBSchema {
@@ -326,10 +344,20 @@ interface QBSchema extends DBSchema {
     value: DashboardShareRow;
     indexes: { 'by-token': string; 'by-board': string };
   };
+  card_reactions: {
+    key: string;
+    value: CardReactionRow;
+    indexes: { 'by-card': string; 'by-user': string };
+  };
+  card_dependencies: {
+    key: string;
+    value: CardDependencyRow;
+    indexes: { 'by-card': string; 'by-related': string };
+  };
 }
 
 const DB_NAME = 'questboard';
-const DB_VERSION = 9; // v9 adds dashboard_layouts + dashboard_shares
+const DB_VERSION = 10; // v10 adds card_reactions + card_dependencies
 
 let _db: Promise<IDBPDatabase<QBSchema>> | null = null;
 
@@ -434,6 +462,17 @@ export function getDB(): Promise<IDBPDatabase<QBSchema>> {
           const ds = db.createObjectStore('dashboard_shares', { keyPath: 'id' });
           ds.createIndex('by-token', 'token', { unique: true });
           ds.createIndex('by-board', 'board_id', { unique: false });
+        }
+
+        // ── v10 stores (reactions + card dependencies) ────────────────────────
+        if (oldVersion < 10) {
+          const rxn = db.createObjectStore('card_reactions', { keyPath: 'id' });
+          rxn.createIndex('by-card', 'card_id', { unique: false });
+          rxn.createIndex('by-user', 'user_id', { unique: false });
+
+          const dep = db.createObjectStore('card_dependencies', { keyPath: 'id' });
+          dep.createIndex('by-card', 'card_id', { unique: false });
+          dep.createIndex('by-related', 'related_card_id', { unique: false });
         }
       },
     });

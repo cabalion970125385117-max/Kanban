@@ -4,6 +4,169 @@ Chronological record of changes, bug fixes, and technical decisions.
 
 ---
 
+## 2026-06-04 — v1.4.0 · Phase 9 + Phase 10 · Shipped & Verified
+
+### Summary
+
+16 features scoped, 3 already built (#7 aging, #8 card color, #19 column collapse). 13 new features built across Phase 9 and Phase 10. All verified live in the running app.
+
+---
+
+### IDB Schema — v10
+
+Bumped `DB_VERSION` from 9 → 10. Two new object stores:
+
+**`card_reactions`** — emoji reactions per card per user:
+```ts
+{ id, card_id, user_id, emoji, created_at }
+// indexes: by-card, by-user
+```
+
+**`card_dependencies`** — typed relationships between cards:
+```ts
+{ id, card_id, related_card_id, rel_type: 'blocks'|'relates_to'|'duplicates'|'child_of', created_at }
+// indexes: by-card, by-related
+```
+
+---
+
+### Phase 9 — Card Feature Pack
+
+#### #4 — Rich Text / Markdown Descriptions
+
+**Files:** `MarkdownEditor.tsx`, `MarkdownPreview.tsx`, `CardDetailDrawer.tsx`
+
+Zero external dependencies. `MarkdownPreview` runs a regex pipeline over escaped HTML: fenced code blocks, H1–H3, task lists, unordered/ordered lists, blockquotes, bold/italic, inline code, links, @mentions, `<hr>`. `MarkdownEditor` wraps a `<textarea>` in a Write/Preview tabbed panel with a 7-button toolbar (Bold, Italic, H2, List, Code, Link, @Mention). `wrapSelection()` and `insertLine()` helpers preserve cursor position after toolbar actions. Auto-grows via `scrollHeight`. Saves on Ctrl+Enter or blur.
+
+**CSS:** 16 `.md-*` classes in `globals.css` using `var(--color-*)` tokens exclusively.
+
+**Verified:** Description text typed with `**bold**`, `_italic_`, `## headers`, `- lists`, `` `code` ``, `> blockquote`. Preview renders correctly. Saved to IDB. Read-only preview shown on re-open.
+
+#### #20 — @Mentions in Descriptions
+
+**Files:** `MentionPicker.tsx` (new, extracted from CommentThread pattern)
+
+`MentionPicker` is a reusable floating dropdown — keyboard nav (↑↓ Enter Esc), `onMouseDown` prevents textarea blur, filters out self. Wired into `MarkdownEditor` via `@` keystroke detection identical to `CommentThread`. Saves mention notifications to IDB on description save. `CommentThread` left unchanged — both components share the same pattern.
+
+#### #5 — Card Cloning
+
+**Files:** `CloneCardDialog.tsx`, `useCard.ts` (`useCloneCard`), `cards.api.ts` (`cloneCard`)
+
+Dialog shows source title preview, 4 checkboxes with live counts (Substasks, Assignees, Labels, Tags). `cloneCard()` deep-copies `CardRow` fields, appends "(copy)" to title, re-uses source `column_id`, optionally copies substeps (new IDs, `is_complete: false`). On success, drawer switches to the new card via `onOpenCard` prop added to `CardDetailDrawer`.
+
+**Verified:** "Cabal's task (copy)" created. Board counter 24→25. Assignees, tags, and markdown description all copied correctly.
+
+#### #6 — Bulk Actions
+
+**Files:** `BulkActionBar.tsx`, `board.store.ts` (bulk state), `BoardHeaderV2.tsx` (Select button), `CardFace.tsx` (checkbox overlay), `useCard.ts` (`useBulkMoveCards`, `useBulkArchiveCards`, `useBulkSetPriority`), `cards.api.ts` (3 bulk API fns)
+
+`board.store.ts` gains: `bulkMode: boolean`, `selectedCardIds: string[]`, `setBulkMode`, `setSelectedCardIds`, `toggleCardSelection`. CheckSquare button in `BoardHeaderV2` toggles bulk mode. In bulk mode, `CardFace` renders a checkbox overlay (filled accent when selected, ring-2 border) and disables drag listeners. `BulkActionBar` is a portal-rendered fixed bottom bar: "N selected · Move to ↓ · Priority ↓ · Archive · ✕". Archive requires a 2-step confirmation chip. Esc key clears selection.
+
+**Verified:** 3 cards selected, accent ring shown, BulkActionBar appeared with correct count. Move/Priority/Archive dropdowns all open.
+
+#### #9 — Emoji Reactions
+
+**Files:** `ReactionBar.tsx`, `reactions.api.ts`, `useReactions.ts`, `CardDetailDrawer.tsx`, `CardFace.tsx`
+
+`toggleReaction()` is an idempotent upsert: checks existing rows by `(card_id, user_id, emoji)`, deletes if present, inserts if absent, returns fresh list. `ReactionBar` has two modes: full (drawer) shows all 6 emojis with counts + picker popover; compact (CardFace footer) shows only nonzero pills. "Mine" reactions get accent background. Count badge updates optimistically via `qc.setQueryData`.
+
+**Verified:** 👍 clicked → "👍 1" pill in drawer, compact "👍 1" appeared on CardFace simultaneously.
+
+#### #10 — "Relates To" / Duplicates / Child Of Dependencies
+
+**Files:** `DependencyPanel.tsx` (new — did not previously exist), `dependencies.api.ts`, `useDependencies.ts`
+
+`DependencyPanel` was built from scratch (no prior component existed). 4 relationship types with colour coding: `blocks` red, `relates_to` blue, `duplicates` purple, `child_of` teal. Add form shows type chips + live card search filtered from board store. Duplicate-link guard in `addDependency()`. Groups display with colour-coded type headers + hover-reveal trash button.
+
+**Verified:** Typed "User" → "User1's task" appeared. Clicked → "BLOCKS / User1's task" group rendered with red dot. Count badge "Dependencies 1" updated.
+
+---
+
+### Phase 10 — New Views
+
+#### #1 — Calendar View
+
+**Files:** `CalendarPage.tsx`, `App.tsx` (route `/boards/:boardId/calendar`), `FilterBar.tsx` (calendar icon + `BoardView` type)
+
+`getMonthGrid()` builds a 6×7 `(Date|null)[][]` starting Monday. Today cell has accent circle on date number. Past cells fade to 60% opacity. Cards plotted by `end_date` as priority-coloured pills (up to 3, then "+N more"). Drag-and-drop onto day cells updates `end_date` via `useUpdateCard`. Unscheduled sidebar lists cards without `end_date`, each draggable. Month navigation + "Today" shortcut. Navigated via calendar icon in FilterBar view switcher.
+
+**Verified:** June 2026 grid renders, cards on correct dates with correct priority colours, today (4th) highlighted, "Unscheduled (9)" sidebar populated.
+
+#### #2 — My Work
+
+**Files:** `MyWorkPage.tsx`, `App.tsx` (route `/my-work`), `BoardsPage.tsx` ("My Work" button)
+
+`fetchMyCards()` scans all boards via IDB — iterates `boards → columns → cards` filtering by `owner_ids.includes(userId)`. Groups: Overdue (past `end_date`), Due Today, Due This Week, Later/No Due Date. Each group is collapsible with count badge. Card rows show board chip, column name, due date, priority badge, subtask progress bar. Clicking opens `CardDetailDrawer` cross-board.
+
+**Verified:** `/my-work` shows 3 assigned cards, grouped under "Later / No Due Date", board chip "sdf" + column "To Do" shown, priority badges correct.
+
+#### #3 — Standup / Presentation Mode
+
+**Files:** `StandupMode.tsx`, `BoardPage.tsx` (state + Presentation button), `BoardHeaderV2.tsx` (icon button)
+
+Full-screen portal overlay (z-index 9000). Columns shown as tab pills in header. Cards displayed as large 2/3/4-column grid tiles: priority badge, large title, due date (red if overdue), idle badge, assignee avatar stack. Click any tile → `SpotlightCard` full-screen modal (z-index 9100). Per-column countdown timer: 1m / 2m / 5m, colour shifts amber <60s, red <30s. Keyboard: ← → columns, Esc closes.
+
+**Verified:** Opened, shows "1/1 — To Do" with 25 cards in grid. Timer buttons visible. Esc closes cleanly.
+
+---
+
+### Bug Fixes During Build
+
+| Bug | Root | Fix |
+|---|---|---|
+| `BulkActionBar` unused `cn` import | Removed after portal refactor | Import stripped |
+| `CardDetailDrawer` unused `Link2` import | Leftover from planning | Removed |
+| `DependencyPanel` unused `ChevronDown` import | Left from draft | Removed |
+| `MyWorkPage` unused `useMemo` + `useBoards` | Refactored to `useQuery` directly | Removed |
+
+Zero TypeScript errors on final `tsc --noEmit`.
+
+---
+
+### New Files Created
+
+```
+apps/web/src/
+  components/card/
+    MarkdownEditor.tsx
+    MarkdownPreview.tsx
+    MentionPicker.tsx
+    CloneCardDialog.tsx
+    ReactionBar.tsx
+    DependencyPanel.tsx
+  components/board/
+    BulkActionBar.tsx
+    StandupMode.tsx
+  api/
+    reactions.api.ts
+    dependencies.api.ts
+  hooks/
+    useReactions.ts
+    useDependencies.ts
+  pages/
+    CalendarPage.tsx
+    MyWorkPage.tsx
+```
+
+### Files Modified
+
+| File | Changes |
+|---|---|
+| `lib/db/index.ts` | v10 schema — `card_reactions` + `card_dependencies` stores |
+| `api/cards.api.ts` | `cloneCard`, `bulkMoveCards`, `bulkArchiveCards`, `bulkSetPriority` |
+| `hooks/useCard.ts` | `useCloneCard`, `useBulkMoveCards`, `useBulkArchiveCards`, `useBulkSetPriority` |
+| `stores/board.store.ts` | Bulk selection state + actions |
+| `components/card/CardDetailDrawer.tsx` | MarkdownEditor, ReactionBar, DependencyPanel, CloneCardDialog, `onOpenCard` prop |
+| `components/card/CardFace.tsx` | Bulk checkbox overlay, compact ReactionBar |
+| `components/board/BoardHeaderV2.tsx` | Standup, Select, Roadmap buttons |
+| `components/board/FilterBar.tsx` | Calendar icon, `BoardView` type expanded |
+| `pages/BoardPage.tsx` | BulkActionBar, StandupMode, `onOpenCard`, Esc handler |
+| `pages/BoardsPage.tsx` | "My Work" nav button |
+| `App.tsx` | Routes: `/calendar`, `/my-work` |
+| `styles/globals.css` | 16 `.md-*` markdown preview classes |
+
+---
+
 ## 2026-06-03 — v1.4.0 Roadmap · Implementation & Design Plan
 
 Sixteen features selected for the next major cycle. Codebase audit before planning revealed three are **already built** (noted inline). Remaining thirteen are organised into four delivery phases below.

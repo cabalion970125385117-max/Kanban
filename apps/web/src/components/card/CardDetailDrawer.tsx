@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Calendar, Clock, Flag, Archive, Palette } from 'lucide-react';
+import { X, Calendar, Clock, Flag, Archive, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PriorityBadge } from '@/components/shared/PriorityBadge';
@@ -8,6 +8,11 @@ import { TimeTracker } from './TimeTracker';
 import { CommentThread } from './CommentThread';
 import { AttachmentPanel } from './AttachmentPanel';
 import { TypingIndicator } from '@/components/collaboration/TypingIndicator';
+import { MarkdownEditor } from './MarkdownEditor';
+import { MarkdownPreview } from './MarkdownPreview';
+import { CloneCardDialog } from './CloneCardDialog';
+import { ReactionBar } from './ReactionBar';
+import { DependencyPanel } from './DependencyPanel';
 import { useUpdateCard, useArchiveCard } from '@/hooks/useCard';
 import { useBoardStore } from '@/stores/board.store';
 import { AssigneesPanel } from './AssigneesPanel';
@@ -18,13 +23,14 @@ interface CardDetailDrawerProps {
   card: Card | null;
   boardId: string;
   onClose: () => void;
+  onOpenCard?: (card: Card) => void;
   emitTypingStart?: (cardId: string) => void;
   emitTypingStop?: (cardId: string) => void;
 }
 
 const PRIORITIES: Priority[] = ['low', 'medium', 'high', 'critical'];
 
-export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emitTypingStop }: CardDetailDrawerProps) {
+export function CardDetailDrawer({ card, boardId, onClose, onOpenCard, emitTypingStart, emitTypingStop }: CardDetailDrawerProps) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [title, setTitle] = useState('');
   const [editingDesc, setEditingDesc] = useState(false);
@@ -34,6 +40,7 @@ export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emit
   const [endDate, setEndDate] = useState<string>('');
   const [priority, setPriority] = useState<Priority>(card?.priority ?? 'medium');
   const [coverColour, setCoverColour] = useState<string | null>(card?.cover_colour ?? null);
+  const [showClone, setShowClone] = useState(false);
 
   const updateCard = useUpdateCard(boardId);
   const archiveCard = useArchiveCard(boardId);
@@ -88,6 +95,14 @@ export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emit
           <div className="flex items-center gap-1">
             <Button
               size="icon" variant="ghost"
+              onClick={() => setShowClone(true)}
+              className="text-[var(--color-text-muted)] hover:text-[var(--color-accent)]"
+              title="Duplicate card"
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+            <Button
+              size="icon" variant="ghost"
               onClick={() => archiveCard.mutate(card.id, { onSuccess: onClose })}
               className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"
               title="Archive card"
@@ -127,10 +142,15 @@ export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emit
             )}
           </div>
 
+          {/* Reactions */}
+          <div>
+            <ReactionBar cardId={card.id} />
+          </div>
+
           {/* Cover colour */}
           <div>
             <label className="text-xs font-medium text-[var(--color-text-muted)] flex items-center gap-1 mb-2">
-              <Palette className="h-3.5 w-3.5" /> Card cover
+              Cover color
             </label>
             <div className="flex items-center gap-2 flex-wrap">
               {['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#14b8a6'].map((c) => (
@@ -212,7 +232,7 @@ export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emit
                   setStartDate(val);
                   updateCard.mutate({ cardId: card.id, data: { start_date: val || null } });
                 }}
-                className="w-full text-sm border border-[var(--color-border)] rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+                className="w-full text-sm border border-[var(--color-border)] rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] bg-[var(--color-surface)] text-[var(--color-text)]"
               />
             </div>
             <div>
@@ -227,7 +247,7 @@ export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emit
                   setEndDate(val);
                   updateCard.mutate({ cardId: card.id, data: { end_date: val || null } });
                 }}
-                className="w-full text-sm border border-[var(--color-border)] rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+                className="w-full text-sm border border-[var(--color-border)] rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] bg-[var(--color-surface)] text-[var(--color-text)]"
               />
             </div>
           </div>
@@ -255,39 +275,38 @@ export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emit
                 if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
                 if (e.key === 'Escape') setEstimateHours(card.estimate_hours != null ? String(card.estimate_hours) : '');
               }}
-              className="w-28 text-sm border border-[var(--color-border)] rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+              className="w-28 text-sm border border-[var(--color-border)] rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] bg-[var(--color-surface)] text-[var(--color-text)]"
             />
           </div>
 
-          {/* Description */}
+          {/* Description — markdown editor */}
           <div>
             <label className="text-xs font-medium text-[var(--color-text-muted)] mb-1 block">
               Description
             </label>
             {editingDesc ? (
-              <textarea
-                autoFocus
+              <MarkdownEditor
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                onFocus={() => emitTypingStart?.(card.id)}
-                onBlur={() => { emitTypingStop?.(card.id); saveDescription(); }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') {
-                    emitTypingStop?.(card.id);
-                    setDescription(card.description ?? '');
-                    setEditingDesc(false);
-                  }
+                onChange={setDescription}
+                boardId={boardId}
+                autoFocus
+                onSave={saveDescription}
+                onCancel={() => {
+                  emitTypingStop?.(card.id);
+                  setDescription(card.description ?? '');
+                  setEditingDesc(false);
                 }}
-                rows={4}
-                className="w-full text-sm border border-[var(--color-accent)] rounded px-3 py-2 focus:outline-none resize-none"
-                placeholder="Add a description…"
+                onTypingStart={() => emitTypingStart?.(card.id)}
+                onTypingStop={() => emitTypingStop?.(card.id)}
               />
             ) : (
               <div
                 onClick={() => setEditingDesc(true)}
-                className="min-h-[64px] text-sm text-[var(--color-text)] bg-[var(--color-bg)] rounded px-3 py-2 cursor-pointer hover:bg-[var(--color-border)]/30"
+                className="min-h-[64px] text-sm text-[var(--color-text)] bg-[var(--color-bg)] rounded px-3 py-2 cursor-pointer hover:bg-[var(--color-border)]/30 transition-colors"
               >
-                {card.description || (
+                {card.description ? (
+                  <MarkdownPreview markdown={card.description} />
+                ) : (
                   <span className="text-[var(--color-text-muted)]">Add a description…</span>
                 )}
               </div>
@@ -302,6 +321,11 @@ export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emit
           {/* ── Subtasks ── */}
           <div className="border-t border-[var(--color-border)] pt-4">
             <SubstepList cardId={card.id} />
+          </div>
+
+          {/* ── Dependencies ── */}
+          <div className="border-t border-[var(--color-border)] pt-4">
+            <DependencyPanel cardId={card.id} boardId={boardId} />
           </div>
 
           {/* Labels */}
@@ -338,6 +362,19 @@ export function CardDetailDrawer({ card, boardId, onClose, emitTypingStart, emit
 
         </div>
       </div>
+
+      {/* Clone dialog */}
+      {showClone && (
+        <CloneCardDialog
+          card={card}
+          boardId={boardId}
+          onClose={() => setShowClone(false)}
+          onCloned={(newCard) => {
+            setShowClone(false);
+            onOpenCard?.(newCard);
+          }}
+        />
+      )}
     </>
   );
 }
