@@ -4,6 +4,20 @@ Chronological record of changes, bug fixes, and technical decisions.
 
 ---
 
+## 2026-06-04 — Housekeeping · Version bump + context compaction
+
+### Summary
+
+Post-Phase 9+10 session housekeeping. Context compacted (`/compact`). One stale artefact fixed.
+
+### Changes
+
+- **`appVersion.ts` bumped** — `'1.2.0'` → `'1.4.0'`. Was inadvertently left stale across three releases.
+- **Context compacted** — `MEMORY.md` and `project_phase_status.md` consolidated; full Phase 9+10 detail preserved.
+- **Next up: Phase 11 — Roadmap** — route `/boards/:boardId/roadmap`, two-panel SVG timeline, card bars from `start_date → end_date`, substep sub-bars, milestone diamonds, drag-resize, zoom M/Q/Y. IDB will bump to v11 (`start_date` on substeps store).
+
+---
+
 ## 2026-06-04 — v1.4.0 · Phase 9 + Phase 10 · Shipped & Verified
 
 ### Summary
