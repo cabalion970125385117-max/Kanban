@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Users, User, ChevronDown, X, LayoutList, Kanban, Rows3, LayoutDashboard, CalendarDays } from 'lucide-react';
+import { Users, User, ChevronDown, X, LayoutList, Kanban, Rows3, LayoutDashboard, CalendarDays, GanttChartSquare } from 'lucide-react';
 import { useBoardMembers, useBoardLabels } from '@/hooks/useBoard';
 import { useAuthStore } from '@/stores/auth.store';
 import { cn } from '@/lib/utils';
@@ -298,7 +298,8 @@ export function FilterBar({
         {viewBtn('swimlane',  <Rows3           className="h-3.5 w-3.5" />, 'Swimlane view')}
         {viewBtn('table',     <LayoutList      className="h-3.5 w-3.5" />, 'Table view')}
         {viewBtn('dashboard', <LayoutDashboard className="h-3.5 w-3.5" />, 'Dashboard view')}
-        {viewBtn('calendar',  <CalendarDays    className="h-3.5 w-3.5" />, 'Calendar view')}
+        {viewBtn('calendar',  <CalendarDays       className="h-3.5 w-3.5" />, 'Calendar view')}
+        {viewBtn('roadmap',   <GanttChartSquare  className="h-3.5 w-3.5" />, 'Roadmap view')}
       </div>
     </div>
   );
