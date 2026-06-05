@@ -4,6 +4,91 @@ Chronological record of changes, bug fixes, and technical decisions.
 
 ---
 
+## 2026-06-05 — v1.5.0 · Phase 12 · Global Search + AI · Shipped & Verified
+
+### Summary
+
+Three interlocking features: a global `Ctrl+K` command palette that searches all IDB data in parallel, an AI-powered card breakdown panel that generates heuristic or OpenAI-driven substep suggestions, and an AI effort estimator that blends subtask count, priority, and historical board averages. Configurable via a new AI settings tab in SettingsDialog.
+
+---
+
+### CommandPalette (`apps/web/src/components/shared/CommandPalette.tsx`) — NEW
+
+- **Trigger:** `Ctrl+K` / `Cmd+K` global `keydown` listener; `Esc` closes
+- **Search:** 150ms debounced, minimum 2 chars; queries IDB in parallel (`Promise.all`) across `cards`, `boards`, `comments`
+- **Results:** grouped by type — Boards (up to 5) / Cards (up to 10) / Comments (up to 5); each row shows icon, title, subtitle, chevron
+- **Navigation:** ↑↓ arrow keys cycle through results; Enter selects; mouse hover highlights
+- **Board result** → `navigate('/boards/:id')`, palette closes
+- **Card/Comment result** → `navigate('/boards/:boardId', { state: { openCardId } })`, palette closes; `BoardPage.tsx` effect detects `location.state.openCardId` and opens `CardDetailDrawer`
+- Rendered unconditionally in `App.tsx` via `createPortal` to `document.body` (z-[300])
+- **IDB:** no version bump — reads existing stores only
+
+### AiBreakdownPanel (`apps/web/src/components/card/AiBreakdownPanel.tsx`) — NEW
+
+**Heuristic mode (default, no API key required):**
+- 10 keyword templates matching card title: `auth`, `api`, `ui`, `database`, `bug`, `test`, `deploy`, `refactor`, `dashboard`, `notification`
+- Generic fallback: 5 steps derived from card title if no keyword matches
+- Suggestions shown with pre-selected checkboxes → "Add N subtasks" writes to IDB via `useCreateSubstep`
+- Per-item quick-add (+) button; regenerate (↻) button; green checkmarks + strikethrough on added items
+
+**OpenAI mode (when API key configured):**
+- `POST https://api.openai.com/v1/chat/completions` with card context (title, priority, description snippet)
+- Parses JSON array from response; same selection UI
+
+Rendered below `<SubstepList>` in `CardDetailDrawer.tsx` inside the subtasks section.
+
+### EstimateAiPopover (`apps/web/src/components/card/EstimateAiPopover.tsx`) — NEW
+
+**Heuristic:**
+- `substepCount × 0.5h × PRIORITY_MULT` (`low=0.75`, `medium=1.0`, `high=1.5`, `critical=2.0`)
+- Blended 60/40 with board historical average from `time_logs`
+- Shows itemised breakdown rows (Subtasks / Priority multiplier / Board avg/card)
+
+**OpenAI:**
+- Sends card title, priority, description, subtask count, time logged so far
+- Returns `{ hours, reasoning }` JSON; rounds to nearest 0.5h
+
+- Rendered as `✨ Estimate` link next to "Estimate (hours)" label in CardDetailDrawer
+- "Use Xh" button → fills estimate input + calls `updateCard.mutate` to persist
+- Portal-rendered (z-[250]); backdrop dismisses
+
+### AI Settings Tab (`apps/web/src/components/shared/SettingsDialog.tsx`) — MODIFIED
+
+- 5th tab: **AI** (`<Sparkles>` icon)
+- Provider selector: **None** (heuristic, no key required) / **OpenAI**
+- API key input with show/hide toggle (`Eye`/`EyeOff`); "Save API key" button buffers through `localKey` state
+- Model dropdown: `gpt-4o-mini` / `gpt-4o` / `gpt-3.5-turbo`
+- Key stored in localStorage via Zustand `persist` (`'qb-ai-settings'`); never proxied through any server
+
+### AI Store (`apps/web/src/stores/ai.store.ts`) — NEW
+
+Zustand + `persist` middleware. Fields: `provider`, `openaiKey`, `openaiModel`. Persists to `'qb-ai-settings'` in localStorage.
+
+### BoardPage (`apps/web/src/pages/BoardPage.tsx`) — MODIFIED
+
+Added `useLocation` effect: detects `location.state.openCardId` set by CommandPalette navigation and opens the correct card drawer.
+
+---
+
+### Verification
+
+All features exercised live in the running app:
+
+| Check | Result |
+|-------|--------|
+| `Ctrl+K` opens palette from any page | ✅ |
+| Search "test" → board result with icon + subtitle | ✅ |
+| Click board result → navigates, palette closes | ✅ |
+| `✨ Estimate` link visible in CardDetailDrawer | ✅ |
+| `AI Breakdown (heuristic)` panel below SubstepList | ✅ |
+| Generate → 5 auth-specific heuristic steps | ✅ |
+| "Add 5 subtasks" → IDB written, SubstepList shows 0/5 | ✅ |
+| Estimate popover opens showing `2.5h` with breakdown | ✅ |
+| "Use 2.5h" → fills input, saves to IDB, popover closes | ✅ |
+| Settings → AI tab: Provider selector + heuristic info box | ✅ |
+
+---
+
 ## 2026-06-04 — Housekeeping · Version bump + context compaction
 
 ### Summary

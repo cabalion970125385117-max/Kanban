@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { BoardHeader } from '@/components/board/BoardHeaderV2';
 import { BoardCanvas } from '@/components/board/BoardCanvas';
 import { TableView } from '@/components/board/TableView';
@@ -21,6 +21,7 @@ import type { Card } from '@questboard/shared';
 export function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [filters, setFilters] = useState<ActiveFilters>({ userId: null, priority: null, labelId: null });
   const [view, setView] = useState<BoardView>('kanban');
@@ -46,6 +47,12 @@ export function BoardPage() {
   useEffect(() => {
     return () => { clear(); };
   }, [boardId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Open card when navigated here from CommandPalette with { state: { openCardId } }
+  useEffect(() => {
+    const openCardId = (location.state as { openCardId?: string } | null)?.openCardId;
+    if (openCardId) setSelectedCardId(openCardId);
+  }, [location.state]);
 
   // Escape key clears bulk mode
   useEffect(() => {

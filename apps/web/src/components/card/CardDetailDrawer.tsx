@@ -13,6 +13,8 @@ import { MarkdownPreview } from './MarkdownPreview';
 import { CloneCardDialog } from './CloneCardDialog';
 import { ReactionBar } from './ReactionBar';
 import { DependencyPanel } from './DependencyPanel';
+import { AiBreakdownPanel } from './AiBreakdownPanel';
+import { EstimateAiPopover } from './EstimateAiPopover';
 import { useUpdateCard, useArchiveCard } from '@/hooks/useCard';
 import { useBoardStore } from '@/stores/board.store';
 import { AssigneesPanel } from './AssigneesPanel';
@@ -254,9 +256,19 @@ export function CardDetailDrawer({ card, boardId, onClose, onOpenCard, emitTypin
 
           {/* Estimate */}
           <div>
-            <label className="text-xs font-medium text-[var(--color-text-muted)] flex items-center gap-1 mb-1">
-              <Clock className="h-3.5 w-3.5" /> Estimate (hours)
-            </label>
+            <div className="flex items-center gap-1 mb-1">
+              <label className="text-xs font-medium text-[var(--color-text-muted)] flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" /> Estimate (hours)
+              </label>
+              <EstimateAiPopover
+                card={card}
+                onEstimate={(h) => {
+                  const s = String(h);
+                  setEstimateHours(s);
+                  updateCard.mutate({ cardId: card.id, data: { estimate_hours: h } });
+                }}
+              />
+            </div>
             <input
               type="number"
               min="0"
@@ -319,8 +331,9 @@ export function CardDetailDrawer({ card, boardId, onClose, onOpenCard, emitTypin
           </div>
 
           {/* ── Subtasks ── */}
-          <div className="border-t border-[var(--color-border)] pt-4">
+          <div className="border-t border-[var(--color-border)] pt-4 space-y-3">
             <SubstepList cardId={card.id} />
+            <AiBreakdownPanel card={card} />
           </div>
 
           {/* ── Dependencies ── */}

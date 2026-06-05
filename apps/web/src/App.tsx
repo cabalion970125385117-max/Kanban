@@ -7,6 +7,7 @@ import { AdminRoute } from '@/components/shared/AdminRoute';
 import { SettingsDialog } from '@/components/shared/SettingsDialog';
 import { ChangelogDialog } from '@/components/shared/ChangelogDialog';
 import { BugReportDialog } from '@/components/shared/BugReportDialog';
+import { CommandPalette } from '@/components/shared/CommandPalette';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { MaintenanceBanner } from '@/components/shared/MaintenanceBanner';
 import { SkipNav } from '@/components/shared/SkipNav';
@@ -95,6 +96,7 @@ export function App() {
           <SettingsDialog />
           <ChangelogDialog />
           <BugReportDialog />
+          <CommandPalette />
         </BrowserRouter>
         <Toaster position="bottom-right" richColors closeButton />
       </QueryClientProvider>

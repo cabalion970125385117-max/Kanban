@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, User, Shield, Palette, ChevronRight } from 'lucide-react';
+import { X, User, Shield, Palette, ChevronRight, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,19 +8,21 @@ import { useSettingsStore } from '@/stores/settings.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore, type Theme } from '@/stores/theme.store';
 import { useQuestStore } from '@/stores/quest.store';
+import { useAiStore, type AiProvider, type OpenAiModel } from '@/stores/ai.store';
 import { AvatarPicker } from '@/components/auth/AvatarPicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { HeroArchetype } from '@questboard/shared';
 
-type Tab = 'avatar' | 'profile' | 'security' | 'appearance';
+type Tab = 'avatar' | 'profile' | 'security' | 'appearance' | 'ai';
 
 const TABS: Array<{ id: Tab; label: string; icon: React.ReactNode }> = [
   { id: 'avatar',      label: 'Avatar',      icon: <span className="text-base">🧙</span> },
   { id: 'profile',     label: 'Profile',     icon: <User className="h-4 w-4" /> },
   { id: 'security',    label: 'Security',    icon: <Shield className="h-4 w-4" /> },
   { id: 'appearance',  label: 'Appearance',  icon: <Palette className="h-4 w-4" /> },
+  { id: 'ai',          label: 'AI',          icon: <Sparkles className="h-4 w-4" /> },
 ];
 
 const nameSchema = z.object({
@@ -50,12 +52,26 @@ const THEME_OPTIONS: Array<{ value: Theme; label: string; desc: string; emoji: s
   { value: 'system', label: 'System', desc: 'Match OS setting',  emoji: '⚙️' },
 ];
 
+const AI_PROVIDERS: Array<{ value: AiProvider; label: string; desc: string }> = [
+  { value: 'none',   label: 'None',   desc: 'Heuristic mode — no API key required' },
+  { value: 'openai', label: 'OpenAI', desc: 'Uses your OpenAI API key for smarter results' },
+];
+
+const OPENAI_MODELS: Array<{ value: OpenAiModel; label: string; desc: string }> = [
+  { value: 'gpt-4o-mini',    label: 'GPT-4o mini',    desc: 'Fast & cheap — best for most tasks' },
+  { value: 'gpt-4o',         label: 'GPT-4o',         desc: 'Most capable — higher cost' },
+  { value: 'gpt-3.5-turbo',  label: 'GPT-3.5 Turbo',  desc: 'Budget option' },
+];
+
 export function SettingsDialog() {
   const { open, closeSettings } = useSettingsStore();
   const { user, updateUser } = useAuthStore();
   const { theme, setTheme } = useThemeStore();
   const { enabled: questEnabled, setEnabled: setQuestEnabled } = useQuestStore();
+  const { provider, openaiKey, openaiModel, setProvider, setOpenaiKey, setOpenaiModel } = useAiStore();
   const [tab, setTab] = useState<Tab>('avatar');
+  const [showKey, setShowKey] = useState(false);
+  const [localKey, setLocalKey] = useState('');
   const [selectedArchetype, setSelectedArchetype] = useState<HeroArchetype | undefined>(
     user?.avatar?.archetype as HeroArchetype | undefined,
   );
@@ -66,8 +82,10 @@ export function SettingsDialog() {
     if (open) {
       setTab('avatar');
       setSelectedArchetype(user?.avatar?.archetype as HeroArchetype | undefined);
+      setLocalKey(openaiKey);
+      setShowKey(false);
     }
-  }, [open, user]);
+  }, [open, user, openaiKey]);
 
   const nameForm = useForm<NameInput>({
     resolver: zodResolver(nameSchema),
@@ -322,6 +340,116 @@ export function SettingsDialog() {
               </div>
             </div>
           )}
+          {/* ── AI ── */}
+          {tab === 'ai' && (
+            <div className="space-y-5">
+              <p className="text-sm text-[var(--color-text-muted)]">
+                Configure AI features for card breakdowns and effort estimates. Your API key is
+                stored locally in this browser only — never sent to any server except OpenAI.
+              </p>
+
+              {/* Provider */}
+              <div className="space-y-2">
+                <Label>Provider</Label>
+                {AI_PROVIDERS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setProvider(opt.value)}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border-2 transition-all text-left ${
+                      provider === opt.value
+                        ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/5'
+                        : 'border-[var(--color-border)] hover:border-[var(--color-accent)]/40'
+                    }`}
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-[var(--color-text)]">{opt.label}</p>
+                      <p className="text-xs text-[var(--color-text-muted)]">{opt.desc}</p>
+                    </div>
+                    {provider === opt.value && (
+                      <ChevronRight className="h-4 w-4 text-[var(--color-accent)]" />
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* OpenAI config — only shown when openai selected */}
+              {provider === 'openai' && (
+                <>
+                  {/* API Key */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ai-api-key">OpenAI API Key</Label>
+                    <div className="relative flex items-center">
+                      <input
+                        id="ai-api-key"
+                        type={showKey ? 'text' : 'password'}
+                        value={localKey}
+                        onChange={(e) => setLocalKey(e.target.value)}
+                        placeholder="sk-…"
+                        className="w-full pr-10 text-sm border border-[var(--color-border)] rounded-lg px-3 py-2 bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/50"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowKey((s) => !s)}
+                        className="absolute right-3 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+                        aria-label={showKey ? 'Hide key' : 'Show key'}
+                      >
+                        {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <p className="text-xs text-[var(--color-text-muted)]">
+                      Get your key at{' '}
+                      <a
+                        href="https://platform.openai.com/api-keys"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[var(--color-accent)] hover:underline"
+                      >
+                        platform.openai.com/api-keys
+                      </a>
+                    </p>
+                  </div>
+
+                  {/* Model */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ai-model">Model</Label>
+                    <select
+                      id="ai-model"
+                      value={openaiModel}
+                      onChange={(e) => setOpenaiModel(e.target.value as OpenAiModel)}
+                      className="w-full text-sm border border-[var(--color-border)] rounded-lg px-3 py-2 bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/50"
+                    >
+                      {OPENAI_MODELS.map((m) => (
+                        <option key={m.value} value={m.value}>
+                          {m.label} — {m.desc}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <Button
+                    onClick={() => {
+                      setOpenaiKey(localKey.trim());
+                      toast.success('AI settings saved');
+                    }}
+                  >
+                    Save API key
+                  </Button>
+                </>
+              )}
+
+              {provider === 'none' && (
+                <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">
+                  <p className="text-xs text-[var(--color-text-muted)]">
+                    <span className="font-semibold text-[var(--color-text)]">Heuristic mode active.</span>{' '}
+                    Card breakdown uses keyword templates, effort estimates use your board's historical
+                    time logs. No external API calls are made.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       </div>
     </div>
