@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Plus, LayoutGrid, LogOut, Settings, Bug, Scroll, MoreHorizontal, Archive, Trash2, Inbox } from 'lucide-react';
+import { Plus, LayoutGrid, LogOut, Settings, Bug, Scroll, MoreHorizontal, Archive, Trash2, Inbox, Sparkles } from 'lucide-react';
+import { BoardTemplateGallery } from '@/components/board/BoardTemplateGallery';
 import { useAuthStore } from '@/stores/auth.store';
 import { useSettingsStore } from '@/stores/settings.store';
 import { useUiStore } from '@/stores/ui.store';
@@ -133,6 +134,7 @@ export function BoardsPage() {
   const [creating, setCreating] = useState(false);
   const [boardName, setBoardName] = useState('');
   const [boardNameError, setBoardNameError] = useState('');
+  const [templateGalleryOpen, setTemplateGalleryOpen] = useState(false);
 
   const { data: boards, isLoading } = useBoards();
   const createBoard = useCreateBoard();
@@ -204,6 +206,9 @@ export function BoardsPage() {
                 <Button variant="ghost" onClick={() => navigate('/my-work')} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
                   <Inbox className="h-4 w-4 mr-1" />My Work
                 </Button>
+                <Button variant="secondary" onClick={() => setTemplateGalleryOpen(true)}>
+                  <Sparkles className="h-4 w-4 mr-1" />From Template
+                </Button>
                 <Button onClick={() => setCreating(true)}>
                   <Plus className="h-4 w-4 mr-1" />New Board
                 </Button>
@@ -262,6 +267,11 @@ export function BoardsPage() {
         {/* ── Issued Cards sidebar ── */}
         <IssuedCardsSidebar />
       </div>
+
+      {/* Template gallery modal */}
+      {templateGalleryOpen && (
+        <BoardTemplateGallery onClose={() => setTemplateGalleryOpen(false)} />
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Settings, Bug, Scroll, GanttChartSquare, Kanban, Zap, BarChart3, Users, TrendingUp, Tag, CheckSquare, Presentation, MapIcon } from 'lucide-react';
+import { ArrowLeft, Settings, Bug, Scroll, GanttChartSquare, Kanban, Zap, BarChart3, Users, TrendingUp, Tag, CheckSquare, Presentation, MapIcon, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PresenceBar } from '@/components/collaboration/PresenceBar';
 import { NotificationDrawer } from '@/components/shared/NotificationDrawer';
@@ -8,9 +8,11 @@ import { VersionBadge } from '@/components/shared/VersionBadge';
 import { BoardMembersDialog } from './BoardMembersDialog';
 import { ProgressReportModal } from './ProgressReportModal';
 import { BoardTagsDialog } from './BoardTagsDialog';
+import { SprintPanel } from './SprintPanel';
 import { useSettingsStore } from '@/stores/settings.store';
 import { useUiStore } from '@/stores/ui.store';
 import { useBoardStore } from '@/stores/board.store';
+import { useActiveSprint } from '@/hooks/useSprints';
 import type { Board } from '@questboard/shared';
 
 interface BoardHeaderProps {
@@ -26,7 +28,9 @@ export function BoardHeader({ board, onStandupClick }: BoardHeaderProps & { onSt
   const [membersOpen, setMembersOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [tagsOpen, setTagsOpen] = useState(false);
+  const [sprintOpen, setSprintOpen] = useState(false);
   const { bulkMode, setBulkMode, setSelectedCardIds } = useBoardStore();
+  const { data: activeSprint } = useActiveSprint(board.id);
 
   return (
     <>
@@ -92,6 +96,18 @@ export function BoardHeader({ board, onStandupClick }: BoardHeaderProps & { onSt
           aria-label="Roadmap"
         >
           <MapIcon className="h-4 w-4" aria-hidden="true" />
+        </Button>
+
+        {/* Sprints */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setSprintOpen(true)}
+          className={activeSprint ? 'text-yellow-300 hover:bg-white/10' : 'text-white hover:bg-white/10'}
+          title={activeSprint ? `Sprint: ${activeSprint.name}` : 'Sprints'}
+          aria-label="Sprints"
+        >
+          <Flag className="h-4 w-4" aria-hidden="true" />
         </Button>
 
         <Button
@@ -222,6 +238,14 @@ export function BoardHeader({ board, onStandupClick }: BoardHeaderProps & { onSt
         boardId={board.id}
         boardName={board.name}
         onClose={() => setTagsOpen(false)}
+      />
+    )}
+
+    {sprintOpen && (
+      <SprintPanel
+        boardId={board.id}
+        boardName={board.name}
+        onClose={() => setSprintOpen(false)}
       />
     )}
     </>

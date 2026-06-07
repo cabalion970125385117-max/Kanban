@@ -12,6 +12,7 @@ import { BulkActionBar } from '@/components/board/BulkActionBar';
 import { StandupMode } from '@/components/board/StandupMode';
 import { LiveCursorLayer } from '@/components/collaboration/LiveCursorLayer';
 import { AppWordCloudBanner } from '@/components/shared/AppWordCloudBanner';
+import { ActiveSprintBanner } from '@/components/board/ActiveSprintBanner';
 import { useBoard } from '@/hooks/useBoard';
 import { useBoardSocket } from '@/hooks/useSocket';
 import { useBoardStore } from '@/stores/board.store';
@@ -120,6 +121,7 @@ export function BoardPage() {
       {board && <BoardHeader board={board} onStandupClick={() => setStandupOpen(true)} />}
 
       <AppWordCloudBanner />
+      <ActiveSprintBanner boardId={boardId} />
 
       <FilterBar
         boardId={boardId}

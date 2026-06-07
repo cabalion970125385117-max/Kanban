@@ -233,6 +233,52 @@ export interface CardDependencyRow {
   created_at: string;
 }
 
+export interface BoardTemplateColumn {
+  name: string;
+  colour: string;
+  wip_limit: number | null;
+  order_index: number;
+}
+
+export interface BoardTemplateSampleCard {
+  title: string;
+  column_index: number;
+  priority: Priority;
+}
+
+export interface BoardTemplateRow {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  is_builtin: boolean;
+  source_board_id: string | null;
+  created_at: string;
+  columns: BoardTemplateColumn[];
+  sample_cards: BoardTemplateSampleCard[];
+}
+
+export type SprintStatus = 'planning' | 'active' | 'completed' | 'cancelled';
+
+export interface SprintRow {
+  id: string;
+  board_id: string;
+  name: string;
+  goal: string | null;
+  start_date: string; // YYYY-MM-DD
+  end_date: string;   // YYYY-MM-DD
+  status: SprintStatus;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface SprintCardRow {
+  id: string;
+  sprint_id: string;
+  card_id: string;
+  added_at: string;
+}
+
 // ─── DB Schema ────────────────────────────────────────────────────────────────
 
 interface QBSchema extends DBSchema {
@@ -354,10 +400,24 @@ interface QBSchema extends DBSchema {
     value: CardDependencyRow;
     indexes: { 'by-card': string; 'by-related': string };
   };
+  board_templates: {
+    key: string;
+    value: BoardTemplateRow;
+  };
+  sprints: {
+    key: string;
+    value: SprintRow;
+    indexes: { 'by-board': string; 'by-status': string };
+  };
+  sprint_cards: {
+    key: string;
+    value: SprintCardRow;
+    indexes: { 'by-sprint': string; 'by-card': string };
+  };
 }
 
 const DB_NAME = 'questboard';
-const DB_VERSION = 10; // v10 adds card_reactions + card_dependencies
+const DB_VERSION = 11; // v11 adds board_templates + sprints + sprint_cards
 
 let _db: Promise<IDBPDatabase<QBSchema>> | null = null;
 
@@ -473,6 +533,19 @@ export function getDB(): Promise<IDBPDatabase<QBSchema>> {
           const dep = db.createObjectStore('card_dependencies', { keyPath: 'id' });
           dep.createIndex('by-card', 'card_id', { unique: false });
           dep.createIndex('by-related', 'related_card_id', { unique: false });
+        }
+
+        // ── v11 stores (board templates + sprints) ────────────────────────────
+        if (oldVersion < 11) {
+          db.createObjectStore('board_templates', { keyPath: 'id' });
+
+          const sp = db.createObjectStore('sprints', { keyPath: 'id' });
+          sp.createIndex('by-board', 'board_id', { unique: false });
+          sp.createIndex('by-status', 'status', { unique: false });
+
+          const sc = db.createObjectStore('sprint_cards', { keyPath: 'id' });
+          sc.createIndex('by-sprint', 'sprint_id', { unique: false });
+          sc.createIndex('by-card', 'card_id', { unique: false });
         }
       },
     });

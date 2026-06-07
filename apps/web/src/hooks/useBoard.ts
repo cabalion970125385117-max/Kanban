@@ -14,6 +14,14 @@ export function useBoards() {
   });
 }
 
+export function useColumns(boardId: string) {
+  return useQuery({
+    queryKey: ['columns', boardId],
+    queryFn: () => boardsApi.getColumns(boardId),
+    enabled: !!boardId,
+  });
+}
+
 export function useBoard(boardId: string) {
   const qc = useQueryClient();
 
