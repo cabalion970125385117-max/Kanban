@@ -4,6 +4,130 @@ Chronological record of changes, bug fixes, and technical decisions.
 
 ---
 
+## 2026-06-07 — v1.6.0 · Phase 13 · Board Templates + Sprint Tracking · Shipped & Verified
+
+### Summary
+
+Two fully local-first (IDB-only) features that close the PM-tool gap: a template gallery for bootstrapping boards, and a lightweight Scrum-style sprint tracking system with a two-panel backlog view.
+
+---
+
+### IDB — v10 → v11 (`apps/web/src/lib/db/index.ts`)
+
+Three new stores added in the `if (oldVersion < 11)` upgrade block:
+
+| Store | Key | Indexes |
+|---|---|---|
+| `board_templates` | `id` | — |
+| `sprints` | `id` | `by-board` (board_id), `by-status` (status) |
+| `sprint_cards` | `id` | `by-sprint` (sprint_id), `by-card` (card_id) |
+
+New row types: `BoardTemplateRow`, `BoardTemplateColumn`, `BoardTemplateSampleCard`, `SprintRow` (status: `planning\|active\|completed\|cancelled`), `SprintCardRow`.
+
+---
+
+### Board Templates
+
+**`apps/web/src/api/templates.api.ts`** — NEW
+
+- `BUILTIN_TEMPLATES` — 5 hardcoded constants (not stored in IDB):
+  - **Scrum Sprint**: 5 cols (Backlog, Sprint Backlog, In Progress [WIP 3], Review, Done)
+  - **Simple Kanban**: 3 cols (To Do, In Progress [WIP 5], Done)
+  - **Bug Tracker**: 6 cols (Reported, Triaged, In Progress, Fix Ready, Closed, Won't Fix)
+  - **Content Calendar**: 5 cols (Ideas, Writing, Review, Scheduled, Published)
+  - **Product Launch**: 6 cols (Discovery, Design, Build, QA, Launch, Post-Launch)
+- `getUserTemplates()` / `getAllTemplates()` — IDB read + merge with builtins
+- `saveBoardAsTemplate(boardId, name, desc)` — snapshots current columns to IDB
+- `deleteUserTemplate(id)` — hard deletes from `board_templates` store
+- `createBoardFromTemplate(template, boardName, includeSampleCards)` — creates board + columns + optional sample cards in IDB
+
+**`apps/web/src/components/board/BoardTemplateGallery.tsx`** — NEW
+
+- Portal to `document.body`, z-[200], backdrop dismiss
+- Left sidebar: built-in templates list + user-saved templates (with trash delete)
+- Right panel: column pills (name + WIP badge, coloured), sample card list (priority dot + column badge), board name input, "Include sample cards" toggle, "Create Board" button
+- Navigates to new board on creation
+
+**`apps/web/src/pages/BoardsPage.tsx`** — MODIFIED
+
+- Added `<Sparkles>` "From Template" `Button variant="secondary"` next to New Board
+- Mounts `<BoardTemplateGallery>` conditionally via `templateGalleryOpen` state
+
+---
+
+### Sprint Tracking
+
+**`apps/web/src/api/sprints.api.ts`** — NEW
+
+- `getSprints(boardId)`, `getActiveSprint(boardId)` (status === 'active')
+- `createSprint`, `updateSprint`, `startSprint`, `completeSprint`, `cancelSprint`, `deleteSprint`
+- `getSprintCards(sprintId)` → `CardRow[]` (full card objects, non-archived)
+- `getSprintCardRows(sprintId)` → raw `SprintCardRow[]`
+- `addCardToSprint(sprintId, cardId)` — idempotent (skips if already in sprint)
+- `removeCardFromSprint(sprintId, cardId)`
+- `getSprintCardIdSet(boardId)` → `Set<string>` of card IDs in the active sprint
+
+**`apps/web/src/hooks/useSprints.ts`** — NEW
+
+React Query hooks with query keys `sprintKeys.all(boardId)`, `.active(boardId)`, `.cards(sprintId)`. Mutations: `useCreateSprint`, `useUpdateSprint`, `useStartSprint`, `useCompleteSprint`, `useCancelSprint`, `useDeleteSprint`, `useAddCardToSprint`, `useRemoveCardFromSprint`.
+
+**`apps/web/src/components/board/SprintPanel.tsx`** — NEW
+
+- Slide-in drawer from right, portal z-[150], `max-w-md`
+- Create form: name (pre-filled "Sprint N"), optional goal, date pickers (today + 14d defaults)
+- Sprint cards: status badge, date range, days-left, actions (Start / Complete / Cancel / Delete with confirm / Edit inline)
+- Grouped: ACTIVE / PLANNING / Past (collapsed by default)
+- "View Backlog" → `/boards/:id/sprint?sprintId=:id`
+
+**`apps/web/src/components/board/ActiveSprintBanner.tsx`** — NEW
+
+- Thin banner rendered between board header and FilterBar on `BoardPage`
+- Only shows when `useActiveSprint` returns a sprint and user hasn't dismissed (local state)
+- Content: Flag icon, sprint name, date range, days-left (red ≤0, orange ≤2, normal otherwise), progress bar (done/total via `DONE_COLUMN_NAMES` regex), sprint goal snippet on lg+
+- Actions: "Backlog" link, "Complete" with confirm dialog, dismiss ×
+
+**`apps/web/src/pages/SprintBacklogPage.tsx`** — NEW (route: `/boards/:id/sprint`)
+
+- Two-panel layout: Backlog (flex-4) | Sprint panel (flex-6, accent-tinted)
+- Cards derived from `useBoardStore` (live, non-archived) split by sprint membership
+- Backlog search and sprint search (both real-time)
+- `CardRow` mini-component: priority dot, title (opens CardDetailDrawer), column badge (sm+), estimate hours, action button (hover-reveal)
+- Done detection: `DONE_NAMES = /^(done|complete|completed|closed|resolved|shipped|live|released|finished|merged)$/i`
+- Done sprint cards rendered at `opacity-60`
+- Progress bar (done/total) in sprint panel header
+- "No active sprint" empty state if none
+
+**`apps/web/src/components/board/BoardHeaderV2.tsx`** — MODIFIED
+
+- Added Flag icon button (yellow `text-yellow-300` when sprint active, white otherwise)
+- Mounts `<SprintPanel>` conditionally via `sprintOpen` state
+
+**`apps/web/src/pages/BoardPage.tsx`** — MODIFIED
+
+- Added `<ActiveSprintBanner boardId={boardId} />` after `<AppWordCloudBanner />`
+
+**`apps/web/src/App.tsx`** — MODIFIED
+
+- Lazy import + route `<Route path="/boards/:boardId/sprint" element={<SprintBacklogPage />} />`
+
+**`apps/web/src/hooks/useBoard.ts`** — MODIFIED
+
+- Exported standalone `useColumns(boardId)` hook (React Query, queryKey `['columns', boardId]`)
+
+---
+
+### Verification (2026-06-07)
+
+- ✅ Sprint created (Sprint 1, Jun 7–Jun 21) and started via SprintPanel
+- ✅ ActiveSprintBanner appears on BoardPage with sprint name + progress bar
+- ✅ SprintBacklogPage loads — 5 backlog cards, sprint empty
+- ✅ Add card to sprint (Core feature development) — backlog 5→4, sprint 0→1
+- ✅ Backlog search filter ("perf" → 1 result "Performance benchmarks")
+- ✅ Remove card from sprint — sprint 1→0, backlog 4→5, empty state shown
+- ✅ `appVersion.ts` set to `'1.6.0'`
+
+---
+
 ## 2026-06-05 — v1.5.0 · Phase 12 · Global Search + AI · Shipped & Verified
 
 ### Summary
