@@ -39,8 +39,8 @@ function renderMarkdown(md: string): string {
   html = html.replace(/^\d+\. (.+)$/gm, '<li class="md-oli">$1</li>');
   html = html.replace(/(<li class="md-oli">.*<\/li>\n?)+/g, (m) => `<ol class="md-ol">${m}</ol>`);
 
-  // Blockquotes
-  html = html.replace(/^> (.+)$/gm, '<blockquote class="md-blockquote">$1</blockquote>');
+  // Blockquotes — note: `>` was already escaped to `&gt;` above
+  html = html.replace(/^&gt; (.+)$/gm, '<blockquote class="md-blockquote">$1</blockquote>');
 
   // Bold + italic
   html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');

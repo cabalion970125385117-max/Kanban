@@ -119,7 +119,7 @@ const KEYWORD_TEMPLATES: Array<{ keywords: string[]; steps: string[] }> = [
 function heuristicBreakdown(title: string, description: string | null): string[] {
   const haystack = `${title} ${description ?? ''}`.toLowerCase();
   for (const { keywords, steps } of KEYWORD_TEMPLATES) {
-    if (keywords.some((k) => haystack.includes(k))) return steps;
+    if (keywords.some((k) => new RegExp(`\\b${k}\\b`).test(haystack))) return steps;
   }
   // Generic fallback
   const noun = title.split(' ').slice(0, 4).join(' ');

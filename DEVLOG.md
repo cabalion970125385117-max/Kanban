@@ -4,6 +4,38 @@ Chronological record of changes, bug fixes, and technical decisions.
 
 ---
 
+## 2026-06-09 — Bug Fixes · Deep Audit Findings (BUG-006–008)
+
+### BUG-006 · MarkdownPreview — blockquote never rendered
+
+**File:** `apps/web/src/components/card/MarkdownPreview.tsx`
+
+**Root cause:** The regex pipeline HTML-escapes `>` → `&gt;` on line 17 before the blockquote pattern fires. The original regex `^> (.+)$` can never match the post-escape form.
+
+**Fix:** Changed the blockquote regex to match `^&gt; (.+)$` (the actual string after escaping).
+
+---
+
+### BUG-007 · Substep checkbox — card face counter stayed stale
+
+**File:** `apps/web/src/hooks/useSubsteps.ts`
+
+**Root cause:** `useUpdateSubstep.onSuccess` only invalidated the `['substeps', cardId]` React Query cache, which updates the drawer list. The board store's card object (used by `CardFace`) retained the `substep_count`/`substep_done` values computed at board-load time via `enrichCard()`, and was never refreshed after mutations.
+
+**Fix:** Added `syncCardSubstepCounts(cardId)` helper — calls `getCard(cardId)` (re-runs `enrichCard` from IDB) then pushes the fresh card into the board store via `useBoardStore.getState().updateCard()`. Applied to all three mutation hooks: `useCreateSubstep`, `useUpdateSubstep`, `useDeleteSubstep`.
+
+---
+
+### BUG-008 · AI Breakdown — substring match caused wrong template
+
+**File:** `apps/web/src/components/card/AiBreakdownPanel.tsx`
+
+**Root cause:** `heuristicBreakdown()` used `haystack.includes(k)` for keyword matching. The keyword `"view"` from the `ui` template matched as a substring inside `"interviews"` in the description, causing cards about user research to receive wireframe/mockup breakdown steps instead of the generic fallback.
+
+**Fix:** Replaced `haystack.includes(k)` with `new RegExp(\`\\b${k}\\b\`).test(haystack)` for whole-word matching. Also prevents other false positives (e.g. `"fix"` matching `"suffix"`, `"test"` matching substrings in other contexts).
+
+---
+
 ## 2026-06-07 — v1.6.0 · Phase 13 · Board Templates + Sprint Tracking · Shipped & Verified
 
 ### Summary
