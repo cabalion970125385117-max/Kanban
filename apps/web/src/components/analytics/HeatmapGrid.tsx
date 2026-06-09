@@ -48,7 +48,7 @@ export function HeatmapGrid({ data }: HeatmapGridProps) {
       <h3 className="text-sm font-semibold text-[var(--color-text)] mb-1">Activity Heatmap</h3>
       <p className="text-xs text-[var(--color-text-muted)] mb-4">Cards created & completed per day — last 12 weeks</p>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-hidden">
         <div className="flex gap-1 min-w-max">
           {/* Day labels */}
           <div className="flex flex-col gap-1 mr-1">
