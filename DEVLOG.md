@@ -4,6 +4,43 @@ Chronological record of changes, bug fixes, and technical decisions.
 
 ---
 
+## 2026-06-09 — Deep Audit Session 2 · Pages & Features Pass
+
+Continued audit pass covering all pages and features not reached in the first session. No new code bugs found; one dead-code observation noted.
+
+### Pages audited (all PASS)
+
+| Feature | Result | Notes |
+|---|---|---|
+| Settings — AI tab | ✅ | Provider toggle (None/OpenAI), heuristic mode info box — correct |
+| Settings — Appearance | ✅ | Light/Dark/System + Word Cloud toggle — correct |
+| Settings — Avatar | ✅ | 8 hero archetypes, Knight selected — correct |
+| Command Palette (Ctrl+K) | ✅ | Cross-board search, grouped results, priority badges — correct |
+| Standup Mode | ✅ | Fullscreen overlay, column tabs, timer buttons, Prev/Next navigation — correct |
+| Boards page | ✅ | Board count, From Template, New Board buttons, board cards — correct |
+| Board Template Gallery | ✅ | 5 built-in templates, switching updates columns/sample-card count/placeholder — correct |
+| My Work page | ✅ | "Later / No Due Date" grouping, cross-board card with board · column breadcrumb — correct |
+| Sprint Panel (Flag button) | ✅ | Active sprint shown, Backlog/Complete/Cancel actions — correct |
+| Sprint Backlog page | ✅ | Two-panel layout, 5-card backlog with column badges, empty sprint state — correct |
+| Roadmap view | ✅ | Timeline renders, "No dates (5)" fallback for dateless cards — correct |
+| Card Detail Drawer | ✅ | All markdown elements (H2, bold, italic, code, blockquote) render; BUG-006 blockquote fix confirmed live |
+
+### Dead code — `QuestBanner.tsx`
+
+`apps/web/src/components/shared/QuestBanner.tsx` (~880 lines, the RPG Mode canvas renderer from v1.2.0) is never imported anywhere. It was superseded by `AppWordCloudBanner.tsx`, which occupies the same board-page banner slot and uses the same `useQuestStore().enabled` state. File should be deleted. Cleanup task spawned.
+
+---
+
+## 2026-06-09 — Bug Fix · HeatmapGrid phantom vertical scrollbar
+
+**File:** `apps/web/src/components/analytics/HeatmapGrid.tsx`
+
+**Root cause:** CSS rule `overflow-x: auto` implicitly coerces `overflow-y` from `visible` to `auto`, adding a phantom vertical scrollbar inside the Analytics card.
+
+**Fix:** Added `overflow-y-hidden` to the same container div (line 51).
+
+---
+
 ## 2026-06-09 — Bug Fixes · Deep Audit Findings (BUG-006–008)
 
 ### BUG-006 · MarkdownPreview — blockquote never rendered
