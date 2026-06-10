@@ -29,15 +29,15 @@ export function HeatmapGrid({ data }: HeatmapGridProps) {
     weeks.push(padded.slice(i, i + 7));
   }
 
-  // Month labels: when the month changes in the data
-  const monthLabels: Array<{ col: number; label: string }> = [];
+  // Month label per week column — built as a Record for O(1) lookup in render
+  const monthLabelMap: Record<number, string> = {};
   let lastMonth = '';
   weeks.forEach((week, col) => {
     const firstData = week.find((d) => d !== null);
     if (firstData) {
       const m = format(parseISO(firstData.date), 'MMM');
       if (m !== lastMonth) {
-        monthLabels.push({ col, label: m });
+        monthLabelMap[col] = m;
         lastMonth = m;
       }
     }
@@ -65,26 +65,23 @@ export function HeatmapGrid({ data }: HeatmapGridProps) {
           </div>
 
           {/* Week columns */}
-          {weeks.map((week, col) => {
-            const monthLabel = monthLabels.find((m) => m.col === col);
-            return (
-              <div key={col} className="flex flex-col gap-1">
-                <div className="h-4 text-[10px] text-[var(--color-text-muted)] whitespace-nowrap">
-                  {monthLabel?.label ?? ''}
-                </div>
-                {Array(7).fill(null).map((_, row) => {
-                  const cell = week[row] ?? null;
-                  return (
-                    <div
-                      key={row}
-                      title={cell ? `${cell.date}: ${cell.count} activities` : undefined}
-                      className={`h-3 w-3 rounded-sm ${cell ? LEVEL_COLORS[cell.level] : 'bg-transparent'}`}
-                    />
-                  );
-                })}
+          {weeks.map((week, col) => (
+            <div key={col} className="flex flex-col gap-1">
+              <div className="h-4 text-[10px] text-[var(--color-text-muted)] whitespace-nowrap">
+                {monthLabelMap[col] ?? ''}
               </div>
-            );
-          })}
+              {Array.from({ length: 7 }, (_, row) => {
+                const cell = week[row];
+                return (
+                  <div
+                    key={row}
+                    title={cell ? `${cell.date}: ${cell.count} activities` : undefined}
+                    className={`h-3 w-3 rounded-sm ${cell ? LEVEL_COLORS[cell.level] : 'bg-transparent'}`}
+                  />
+                );
+              })}
+            </div>
+          ))}
         </div>
       </div>
 

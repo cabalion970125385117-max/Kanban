@@ -12,10 +12,11 @@ import { useCreateSubstep } from '@/hooks/useSubsteps';
 import type { Card } from '@questboard/shared';
 
 // ── Keyword templates ─────────────────────────────────────────────────────────
+// Regexes are pre-compiled once at module load to avoid per-call allocation.
 
-const KEYWORD_TEMPLATES: Array<{ keywords: string[]; steps: string[] }> = [
+const KEYWORD_TEMPLATES: Array<{ patterns: RegExp[]; steps: string[] }> = [
   {
-    keywords: ['auth', 'login', 'signup', 'register', 'password', 'session', 'oauth'],
+    patterns: ['auth', 'login', 'signup', 'register', 'password', 'session', 'oauth'].map((k) => new RegExp(`\\b${k}\\b`)),
     steps: [
       'Design auth schema & token strategy',
       'Implement auth middleware',
@@ -25,7 +26,7 @@ const KEYWORD_TEMPLATES: Array<{ keywords: string[]; steps: string[] }> = [
     ],
   },
   {
-    keywords: ['api', 'endpoint', 'rest', 'route', 'backend', 'handler'],
+    patterns: ['api', 'endpoint', 'rest', 'route', 'backend', 'handler'].map((k) => new RegExp(`\\b${k}\\b`)),
     steps: [
       'Define API contract & Zod schema',
       'Implement route handler',
@@ -35,7 +36,7 @@ const KEYWORD_TEMPLATES: Array<{ keywords: string[]; steps: string[] }> = [
     ],
   },
   {
-    keywords: ['ui', 'component', 'design', 'layout', 'page', 'view', 'screen'],
+    patterns: ['ui', 'component', 'design', 'layout', 'page', 'view', 'screen'].map((k) => new RegExp(`\\b${k}\\b`)),
     steps: [
       'Create wireframe / mockup',
       'Build component skeleton',
@@ -45,7 +46,7 @@ const KEYWORD_TEMPLATES: Array<{ keywords: string[]; steps: string[] }> = [
     ],
   },
   {
-    keywords: ['database', 'migration', 'schema', 'table', 'model', 'idb', 'indexeddb'],
+    patterns: ['database', 'migration', 'schema', 'table', 'model', 'idb', 'indexeddb'].map((k) => new RegExp(`\\b${k}\\b`)),
     steps: [
       'Write migration / upgrade script',
       'Update TypeScript row types',
@@ -55,7 +56,7 @@ const KEYWORD_TEMPLATES: Array<{ keywords: string[]; steps: string[] }> = [
     ],
   },
   {
-    keywords: ['bug', 'fix', 'error', 'crash', 'issue', 'broken', 'regression'],
+    patterns: ['bug', 'fix', 'error', 'crash', 'issue', 'broken', 'regression'].map((k) => new RegExp(`\\b${k}\\b`)),
     steps: [
       'Reproduce the issue reliably',
       'Identify root cause',
@@ -65,7 +66,7 @@ const KEYWORD_TEMPLATES: Array<{ keywords: string[]; steps: string[] }> = [
     ],
   },
   {
-    keywords: ['test', 'spec', 'coverage', 'unit', 'e2e', 'vitest', 'playwright'],
+    patterns: ['test', 'spec', 'coverage', 'unit', 'e2e', 'vitest', 'playwright'].map((k) => new RegExp(`\\b${k}\\b`)),
     steps: [
       'Identify cases to cover',
       'Write happy-path tests',
@@ -75,7 +76,7 @@ const KEYWORD_TEMPLATES: Array<{ keywords: string[]; steps: string[] }> = [
     ],
   },
   {
-    keywords: ['deploy', 'release', 'ci', 'pipeline', 'publish', 'ship'],
+    patterns: ['deploy', 'release', 'ci', 'pipeline', 'publish', 'ship'].map((k) => new RegExp(`\\b${k}\\b`)),
     steps: [
       'Update changelog & bump version',
       'Tag release in git',
@@ -85,7 +86,7 @@ const KEYWORD_TEMPLATES: Array<{ keywords: string[]; steps: string[] }> = [
     ],
   },
   {
-    keywords: ['refactor', 'cleanup', 'simplify', 'extract', 'reorganize', 'restructure'],
+    patterns: ['refactor', 'cleanup', 'simplify', 'extract', 'reorganize', 'restructure'].map((k) => new RegExp(`\\b${k}\\b`)),
     steps: [
       'Map current code structure',
       'Draft refactored design',
@@ -95,7 +96,7 @@ const KEYWORD_TEMPLATES: Array<{ keywords: string[]; steps: string[] }> = [
     ],
   },
   {
-    keywords: ['dashboard', 'analytics', 'chart', 'graph', 'report', 'metrics'],
+    patterns: ['dashboard', 'analytics', 'chart', 'graph', 'report', 'metrics'].map((k) => new RegExp(`\\b${k}\\b`)),
     steps: [
       'Identify required KPIs & data sources',
       'Implement data aggregation',
@@ -105,7 +106,7 @@ const KEYWORD_TEMPLATES: Array<{ keywords: string[]; steps: string[] }> = [
     ],
   },
   {
-    keywords: ['notification', 'email', 'alert', 'webhook', 'socket', 'realtime'],
+    patterns: ['notification', 'email', 'alert', 'webhook', 'socket', 'realtime'].map((k) => new RegExp(`\\b${k}\\b`)),
     steps: [
       'Define notification types & payloads',
       'Implement send / emit logic',
@@ -118,8 +119,8 @@ const KEYWORD_TEMPLATES: Array<{ keywords: string[]; steps: string[] }> = [
 
 function heuristicBreakdown(title: string, description: string | null): string[] {
   const haystack = `${title} ${description ?? ''}`.toLowerCase();
-  for (const { keywords, steps } of KEYWORD_TEMPLATES) {
-    if (keywords.some((k) => new RegExp(`\\b${k}\\b`).test(haystack))) return steps;
+  for (const { patterns, steps } of KEYWORD_TEMPLATES) {
+    if (patterns.some((re) => re.test(haystack))) return steps;
   }
   // Generic fallback
   const noun = title.split(' ').slice(0, 4).join(' ');
@@ -235,7 +236,7 @@ export function AiBreakdownPanel({ card }: AiBreakdownPanelProps) {
     for (const i of toAdd) {
       await create.mutateAsync({ name: suggestions[i] });
     }
-    setAdded((a) => new Set([...a, ...selected]));
+    setAdded((a) => new Set([...a, ...toAdd]));
   };
 
   const pendingCount = [...selected].filter((i) => !added.has(i)).length;
@@ -255,22 +256,23 @@ export function AiBreakdownPanel({ card }: AiBreakdownPanelProps) {
             </span>
           )}
         </div>
-        {!loading && suggestions.length === 0 && (
-          <button
-            onClick={generate}
-            className="text-xs text-[var(--color-accent)] hover:opacity-80 font-medium transition-opacity"
-          >
-            Generate
-          </button>
-        )}
-        {!loading && suggestions.length > 0 && (
-          <button
-            onClick={generate}
-            title="Regenerate suggestions"
-            className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
-          >
-            <RefreshCw className="h-3 w-3" />
-          </button>
+        {!loading && (
+          suggestions.length === 0 ? (
+            <button
+              onClick={generate}
+              className="text-xs text-[var(--color-accent)] hover:opacity-80 font-medium transition-opacity"
+            >
+              Generate
+            </button>
+          ) : (
+            <button
+              onClick={generate}
+              title="Regenerate suggestions"
+              className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+            >
+              <RefreshCw className="h-3 w-3" />
+            </button>
+          )
         )}
       </div>
 
