@@ -12,6 +12,7 @@ import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { MaintenanceBanner } from '@/components/shared/MaintenanceBanner';
 import { SkipNav } from '@/components/shared/SkipNav';
 import { logError } from '@/lib/errorLogger';
+import { useBridgeSync } from '@/hooks/useBridgeSync';
 
 // ── Route-level code splitting ────────────────────────────────────────────────
 // Each page is its own JS chunk; the browser only fetches what it needs.
@@ -47,6 +48,11 @@ const queryClient = new QueryClient({
   },
 });
 
+function BridgeSyncProvider() {
+  useBridgeSync();
+  return null;
+}
+
 function UnhandledRejectionLogger() {
   useEffect(() => {
     const handler = (e: PromiseRejectionEvent) => {
@@ -70,6 +76,7 @@ export function App() {
         <BrowserRouter>
           <SkipNav />
           <UnhandledRejectionLogger />
+          <BridgeSyncProvider />
           <MaintenanceBanner />
           <Suspense fallback={<PageFallback />}>
           <Routes>

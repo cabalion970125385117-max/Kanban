@@ -4,6 +4,7 @@
  */
 import { getDB, uid, now } from '@/lib/db';
 import { useAuthStore } from '@/stores/auth.store';
+import { bridgeSync } from '@/lib/bridge-sync';
 import type { Board, BoardMember, Column, Label } from '@questboard/shared';
 import type {
   CreateBoardInput,
@@ -61,6 +62,7 @@ export async function createBoard(data: CreateBoardInput): Promise<Board> {
   await db.put('boards', board);
   // Add creator as admin member
   await db.put('board_members', { board_id: id, user_id: userId, role: 'admin' });
+  bridgeSync('board:upsert', { ...board, member_count: 1 });
   return { ...board, member_count: 1 };
 }
 
@@ -245,6 +247,7 @@ export async function createColumn(boardId: string, data: CreateColumnInput): Pr
     created_at: now(),
   };
   await db.put('columns', col);
+  bridgeSync('column:upsert', col);
   return { ...col, card_count: 0 };
 }
 
@@ -270,6 +273,7 @@ export async function deleteColumn(_boardId: string, columnId: string): Promise<
     throw makeError('Cannot delete a column that still has cards', 409);
   }
   await db.delete('columns', columnId);
+  bridgeSync('column:delete', { id: columnId });
 }
 
 export async function reorderColumns(boardId: string, order: string[]): Promise<void> {

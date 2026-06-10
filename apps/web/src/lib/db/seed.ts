@@ -3,29 +3,29 @@ import { getDB, uid, now } from './index';
 import type { HeroArchetype } from '@questboard/shared';
 
 const ARCHETYPES: HeroArchetype[] = [
-  'knight', 'mage', 'archer', 'paladin', 'rogue', 'sorcerer', 'berserker', 'herald',
+  'quality', 'process', 'project', 'production', 'maintenance', 'finance', 'management', 'aiit',
 ];
 
 const ARCHETYPE_COLOURS: Record<HeroArchetype, string> = {
-  knight: '#5B4FCF',
-  mage: '#9B59B6',
-  archer: '#2EA64A',
-  paladin: '#F4D03F',
-  rogue: '#1A1A2E',
-  sorcerer: '#D94040',
-  berserker: '#E07B2A',
-  herald: '#17A589',
+  quality:    '#0891B2',
+  process:    '#4F46E5',
+  project:    '#059669',
+  production: '#EA580C',
+  maintenance:'#475569',
+  finance:    '#16A34A',
+  management: '#7C3AED',
+  aiit:       '#2563EB',
 };
 
 const ARCHETYPE_EMOJI: Record<HeroArchetype, string> = {
-  knight: '⚔️',
-  mage: '🧙',
-  archer: '🏹',
-  paladin: '🛡️',
-  rogue: '🗡️',
-  sorcerer: '🔮',
-  berserker: '🪓',
-  herald: '📯',
+  quality:    '🔬',
+  process:    '⚙️',
+  project:    '📋',
+  production: '🏭',
+  maintenance:'🛠️',
+  finance:    '💰',
+  management: '👔',
+  aiit:       '🤖',
 };
 
 function svgDataUrl(emoji: string, bg: string): string {
@@ -64,13 +64,13 @@ export async function seedDB(): Promise<void> {
   const existing = await db.getFromIndex('users', 'by-email', 'cabal@questboard.app');
   if (!existing) {
     const hash = await hashPassword('cabal');
-    const knights = await db.getAllFromIndex('avatars', 'by-archetype', 'knight');
+    const qualityAvatars = await db.getAllFromIndex('avatars', 'by-archetype', 'quality');
     await db.put('users', {
       id: uid(),
       name: 'cabal',
       email: 'cabal@questboard.app',
       password_hash: hash,
-      avatar_id: knights[0]?.id ?? null,
+      avatar_id: qualityAvatars[0]?.id ?? null,
       role: 'admin',
       status: 'active',
       created_at: now(),

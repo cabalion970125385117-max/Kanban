@@ -82,7 +82,7 @@ export async function register(data: RegisterInput): Promise<AuthTokens> {
   if (existing) throw makeError('Email already registered');
 
   const hash = await hashPassword(data.password);
-  const archetype = data.avatar_archetype ?? 'knight';
+  const archetype = data.avatar_archetype ?? 'quality';
   const avatars = await db.getAllFromIndex('avatars', 'by-archetype', archetype);
   const avatar = avatars[0];
 

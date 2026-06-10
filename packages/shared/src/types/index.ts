@@ -2,14 +2,14 @@ export type UserRole = 'admin' | 'maintenance' | 'member' | 'guest';
 export type UserStatus = 'active' | 'inactive' | 'suspended';
 export type Priority = 'low' | 'medium' | 'high' | 'critical';
 export type HeroArchetype =
-  | 'knight'
-  | 'mage'
-  | 'archer'
-  | 'paladin'
-  | 'rogue'
-  | 'sorcerer'
-  | 'berserker'
-  | 'herald';
+  | 'quality'
+  | 'process'
+  | 'project'
+  | 'production'
+  | 'maintenance'
+  | 'finance'
+  | 'management'
+  | 'aiit';
 
 export interface Avatar {
   id: string;

@@ -17,6 +17,11 @@ export default defineConfig({
         target: 'http://localhost:4000',
         changeOrigin: true,
       },
+      '/bridge': {
+        target: 'http://localhost:4002',
+        changeOrigin: true,
+        rewrite: (path: string) => path.replace(/^\/bridge/, ''),
+      },
     },
   },
 });

@@ -3,6 +3,7 @@
  */
 import { getDB, uid, now } from '@/lib/db';
 import { useAuthStore } from '@/stores/auth.store';
+import { bridgeSync } from '@/lib/bridge-sync';
 import type { Card, Label } from '@questboard/shared';
 import type { CreateCardInput, UpdateCardInput, MoveCardInput, ListCardsQuery } from '@questboard/shared';
 import type { CardRow } from '@/lib/db';
@@ -127,6 +128,7 @@ export async function createCard(boardId: string, data: CreateCardInput): Promis
     label_ids: [],
   };
   await db.put('cards', row);
+  bridgeSync('card:upsert', row);
   return enrichCard(row);
 }
 
@@ -155,6 +157,7 @@ export async function updateCard(cardId: string, data: UpdateCardInput): Promise
     updated_at: now(),
   };
   await db.put('cards', updated);
+  bridgeSync('card:upsert', updated);
   return enrichCard(updated);
 }
 
@@ -162,7 +165,9 @@ export async function deleteCard(cardId: string): Promise<void> {
   const db = await getDB();
   const row = await db.get('cards', cardId);
   if (!row) return;
-  await db.put('cards', { ...row, archived_at: now() });
+  const archived = { ...row, archived_at: now() };
+  await db.put('cards', archived);
+  bridgeSync('card:upsert', archived);
 }
 
 export async function addCardOwner(cardId: string, userId: string): Promise<Card> {
@@ -218,6 +223,7 @@ export async function moveCard(cardId: string, data: MoveCardInput): Promise<Car
   await tx.done;
 
   const moved = await db.get('cards', cardId);
+  if (moved) bridgeSync('card:upsert', moved);
   return enrichCard(moved!);
 }
 
