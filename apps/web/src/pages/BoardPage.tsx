@@ -87,7 +87,7 @@ export function BoardPage() {
     return (
       <div className="h-screen flex items-center justify-center bg-[var(--color-bg)]">
         <div className="text-center">
-          <div className="text-4xl mb-4 animate-pulse">{'⚔️'}</div>
+          <div className="h-8 w-8 rounded-full border-2 border-[var(--color-accent)]/20 border-t-[var(--color-accent)] animate-spin mb-4 mx-auto" />
           <p className="text-[var(--color-text-muted)]">Loading board&hellip;</p>
         </div>
       </div>

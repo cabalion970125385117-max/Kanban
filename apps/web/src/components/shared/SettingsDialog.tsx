@@ -176,7 +176,7 @@ export function SettingsDialog() {
           {tab === 'avatar' && (
             <div className="space-y-4">
               <p className="text-sm text-[var(--color-text-muted)]">
-                Choose your hero archetype. Your colour variant keeps your team unique.
+                Choose your team role. Your colour variant keeps your identity unique.
               </p>
               <AvatarPicker value={selectedArchetype} onChange={setSelectedArchetype} />
               <Button

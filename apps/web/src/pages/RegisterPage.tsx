@@ -19,7 +19,7 @@ export function RegisterPage() {
           <CardHeader>
             <CardTitle>Create Account</CardTitle>
             <CardDescription>
-              Choose your hero archetype — 8 classes, 4 colour variants, 32 unique heroes
+              Choose your team role — 8 departments, 4 colour variants, 32 unique profiles
             </CardDescription>
           </CardHeader>
           <CardContent>

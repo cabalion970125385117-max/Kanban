@@ -161,7 +161,7 @@ export function SprintBacklogPage() {
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-[var(--color-bg)]">
-        <div className="text-4xl animate-pulse">⚔️</div>
+        <div className="h-8 w-8 rounded-full border-2 border-[var(--color-accent)]/20 border-t-[var(--color-accent)] animate-spin" />
       </div>
     );
   }

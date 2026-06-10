@@ -19,8 +19,8 @@ import { useBoards, useCreateBoard, useArchiveBoard, usePermanentlyDeleteBoard, 
 import type { Board, UserRole } from '@questboard/shared';
 
 const ARCHETYPE_EMOJI: Record<string, string> = {
-  knight: '⚔️', mage: '🧙', archer: '🏹', paladin: '🛡️',
-  rogue: '🗡️', sorcerer: '🔮', berserker: '🪓', herald: '📯',
+  quality: '🔬', process: '⚙️', project: '📋', production: '🏭',
+  maintenance: '🛠️', finance: '💰', management: '👔', aiit: '🤖',
 };
 
 // ── Board card with contextual menu ──────────────────────────────────────────
@@ -57,7 +57,11 @@ function BoardCard({ board, onClick }: { board: Board; onClick: () => void }) {
           className="w-full text-left bg-[var(--color-surface)] rounded-xl p-5 card-shadow border border-transparent hover:border-[var(--color-accent)]/30 transition-all"
         >
           <div className="flex items-start justify-between mb-3">
-            <div className="text-2xl">{'🏰'}</div>
+            <svg viewBox="0 0 28 28" className="h-7 w-7" fill="none" aria-hidden="true">
+              <rect x="2" y="4" width="7" height="20" rx="2" fill="var(--color-accent)" opacity="0.85"/>
+              <rect x="10.5" y="4" width="7" height="14" rx="2" fill="var(--color-accent)" opacity="0.55"/>
+              <rect x="19" y="4" width="7" height="9" rx="2" fill="var(--color-accent)" opacity="0.3"/>
+            </svg>
             <LayoutGrid className="h-4 w-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] transition-colors" />
           </div>
           <h3 className="font-semibold text-[var(--color-text)] truncate mb-1">{board.name}</h3>
@@ -255,7 +259,20 @@ export function BoardsPage() {
               </div>
             ) : (
               <div className="text-center py-24">
-                <div className="text-6xl mb-6">{'🏰'}</div>
+                <div className="flex justify-center mb-6">
+                  <svg viewBox="0 0 120 90" className="w-36 h-28" fill="none" aria-hidden="true">
+                    <rect x="5" y="5" width="110" height="80" rx="8" fill="var(--color-accent)" fillOpacity="0.07" stroke="var(--color-accent)" strokeWidth="1.5" strokeOpacity="0.25"/>
+                    <rect x="14" y="16" width="26" height="54" rx="4" fill="var(--color-accent)" fillOpacity="0.12"/>
+                    <rect x="14" y="20" width="26" height="9" rx="3" fill="var(--color-accent)" fillOpacity="0.5"/>
+                    <rect x="14" y="32" width="26" height="9" rx="3" fill="var(--color-accent)" fillOpacity="0.32"/>
+                    <rect x="47" y="16" width="26" height="54" rx="4" fill="var(--color-accent)" fillOpacity="0.12"/>
+                    <rect x="47" y="20" width="26" height="9" rx="3" fill="var(--color-accent)" fillOpacity="0.5"/>
+                    <rect x="80" y="16" width="26" height="54" rx="4" fill="var(--color-accent)" fillOpacity="0.12"/>
+                    <rect x="80" y="20" width="26" height="9" rx="3" fill="var(--color-accent)" fillOpacity="0.5"/>
+                    <rect x="80" y="32" width="26" height="9" rx="3" fill="var(--color-accent)" fillOpacity="0.32"/>
+                    <rect x="80" y="44" width="26" height="9" rx="3" fill="var(--color-accent)" fillOpacity="0.18"/>
+                  </svg>
+                </div>
                 <h3 className="text-xl font-bold text-[var(--color-primary)] mb-2">No boards yet</h3>
                 <p className="text-[var(--color-text-muted)] mb-8">Create your first board to get started.</p>
                 <Button onClick={() => setCreating(true)}><Plus className="h-4 w-4 mr-1" />New Board</Button>

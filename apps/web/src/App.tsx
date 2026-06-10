@@ -34,7 +34,7 @@ const SprintBacklogPage      = lazy(() => import('@/pages/SprintBacklogPage').th
 function PageFallback() {
   return (
     <div className="h-screen flex items-center justify-center bg-[var(--color-bg)]" aria-label="Loading…" role="status">
-      <div className="animate-pulse text-4xl select-none" aria-hidden="true">⚔️</div>
+      <div className="h-8 w-8 rounded-full border-2 border-[var(--color-accent)]/20 border-t-[var(--color-accent)] animate-spin" aria-hidden="true" />
     </div>
   );
 }

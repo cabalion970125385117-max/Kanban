@@ -46,7 +46,7 @@ export function BoardHeader({ board, onStandupClick }: BoardHeaderProps & { onSt
       </Button>
 
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        <span className="text-lg">{'⚔️'}</span>
+        <Kanban className="h-4 w-4 text-white/70 shrink-0" />
         <h1 className="text-base font-bold truncate">{board.name}</h1>
         {board.member_count != null && (
           <span className="text-xs text-white/60 ml-1">

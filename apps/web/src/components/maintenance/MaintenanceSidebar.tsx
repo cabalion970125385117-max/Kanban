@@ -31,7 +31,7 @@ export function MaintenanceSidebar() {
     <aside className="w-56 shrink-0 bg-[var(--color-surface)] border-r border-[var(--color-border)] flex flex-col h-full">
       <div className="px-4 py-5 border-b border-[var(--color-border)]">
         <div className="flex items-center gap-2">
-          <span className="text-lg">{'⚔️'}</span>
+          <LayoutGrid className="h-5 w-5 text-[var(--color-accent)] shrink-0" />
           <div>
             <p className="text-xs font-bold text-[var(--color-primary)] leading-tight">QuestBoard</p>
             <p className="text-xs text-[var(--color-text-muted)]">Maintenance</p>
