@@ -2,25 +2,25 @@ import { cn } from '@/lib/utils';
 import type { HeroArchetype } from '@questboard/shared';
 
 const ARCHETYPES: Array<{ id: HeroArchetype; label: string; emoji: string }> = [
-  { id: 'knight',    label: 'Knight',    emoji: '⚔️' },
-  { id: 'mage',      label: 'Mage',      emoji: '🧙' },
-  { id: 'archer',    label: 'Archer',    emoji: '🏹' },
-  { id: 'paladin',   label: 'Paladin',   emoji: '🛡️' },
-  { id: 'rogue',     label: 'Rogue',     emoji: '🗡️' },
-  { id: 'sorcerer',  label: 'Sorcerer',  emoji: '🔮' },
-  { id: 'berserker', label: 'Berserker', emoji: '🪓' },
-  { id: 'herald',    label: 'Herald',    emoji: '📯' },
+  { id: 'quality',    label: 'Quality',    emoji: '🔬' },
+  { id: 'process',    label: 'Process',    emoji: '⚙️' },
+  { id: 'project',    label: 'Project',    emoji: '📋' },
+  { id: 'production', label: 'Production', emoji: '🏭' },
+  { id: 'maintenance',label: 'Maintenance',emoji: '🛠️' },
+  { id: 'finance',    label: 'Finance',    emoji: '💰' },
+  { id: 'management', label: 'Management', emoji: '👔' },
+  { id: 'aiit',       label: 'AI & IT',    emoji: '🤖' },
 ];
 
 const AVATAR_BG: Record<HeroArchetype, string> = {
-  knight:    'bg-[#5B4FCF]',
-  mage:      'bg-[#9B59B6]',
-  archer:    'bg-[#2EA64A]',
-  paladin:   'bg-[#F4D03F]',
-  rogue:     'bg-[#1A1A2E]',
-  sorcerer:  'bg-[#D94040]',
-  berserker: 'bg-[#E07B2A]',
-  herald:    'bg-[#17A589]',
+  quality:    'bg-[#0891B2]',
+  process:    'bg-[#4F46E5]',
+  project:    'bg-[#059669]',
+  production: 'bg-[#EA580C]',
+  maintenance:'bg-[#475569]',
+  finance:    'bg-[#16A34A]',
+  management: 'bg-[#7C3AED]',
+  aiit:       'bg-[#2563EB]',
 };
 
 interface AvatarPickerProps {

@@ -3,6 +3,8 @@
 Trello-inspired project management platform with pixel-art medieval hero theme.
 Full spec: `questboard_design_v2.docx`
 
+> **Current state (2026-06-09):** All 13 phases shipped. App version **v1.6.0**. The build is **local-first** — IndexedDB (IDB v11) only, no server deployed. Login: `cabal` / `cabal`. Dev: `cd apps/web && npm run dev`. See `DEVLOG.md` for full change history and `memory/project_phase_status.md` for feature inventory.
+
 ---
 
 ## Stack
@@ -666,16 +668,24 @@ Supported action types: `move_card`, `assign_owner`, `add_label`, `remove_label`
 
 ## Delivery Phases
 
-| Phase | Target | Key Output |
+All phases complete as of 2026-06-09.
+
+| Phase | Status | Key Output |
 |---|---|---|
-| 1 | Weeks 1–2 | Auth, user CRUD, DB migrations, Docker Compose |
-| 2 | Weeks 3–5 | Board/column/card CRUD, drag-drop UI, card drawer |
-| 3 | Weeks 6–7 | Sub-steps, time tracking, dependencies, custom fields |
-| 4 | Weeks 7–8 | Socket.io real-time, live cursors, offline queue |
-| 5 | Weeks 9–10 | Gantt chart (SVG), drag-to-edit dates, PDF export |
-| 6 | Weeks 10–11 | Automation engine, BullMQ workers, rule builder UI |
-| 7 | Weeks 11–12 | Analytics dashboard (cycle time, burndown, heatmap) |
-| 8 | Weeks 13–14 | Accessibility audit, E2E tests, performance tuning |
+| 1 | ✅ | Auth (JWT + httpOnly cookie), user CRUD, IDB schema v1, Docker Compose |
+| 2 | ✅ | Board/column/card CRUD, dnd-kit drag-drop, CardDetailDrawer, Zustand store |
+| 3 | ✅ | Substeps, time tracking, comments, attachments |
+| 4 | ✅ | Socket.io real-time, live cursors (60ms), offline queue, TypingIndicator, PresenceBar |
+| 5 | ✅ | Gantt chart (SVG, drag-resize, milestones, dependency arrows), PDF export |
+| 6 | ✅ | Automation engine, RuleBuilder UI, BullMQ-style local trigger hooks |
+| 7 | ✅ | Analytics dashboard — KPI, cycle time, burndown, heatmap, velocity (Recharts) |
+| 8 | ✅ | WCAG 2.1 AA, Playwright E2E (21 tests), React.lazy code splitting |
+| — | ✅ | Post-8 additions: table view, swimlane view, card cover, aging badges, column collapse, board admin roles, inbox/issued cards, advanced filters |
+| 9 | ✅ v1.4.0 | Markdown descriptions, @mentions, card cloning, bulk actions, emoji reactions, dependency types — IDB v10 |
+| 10 | ✅ v1.4.0 | Calendar view, My Work page, Standup/presentation mode |
+| 11 | ✅ v1.4.0 | Roadmap view (SVG bars, drag-move/resize, milestones, zoom, group-by) |
+| 12 | ✅ v1.5.0 | Global Ctrl+K command palette, AI card breakdown, AI effort estimator, AI settings tab |
+| 13 | ✅ v1.6.0 | Board templates (5 built-ins + user-saved), Sprint tracking (CRUD, backlog page, active banner) — IDB v11 |
 
 ---
 

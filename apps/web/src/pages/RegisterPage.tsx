@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
 import { RegisterForm } from '@/components/auth/RegisterForm';
+import { AppLogo } from '@/components/shared/AppLogo';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export function RegisterPage() {
@@ -10,19 +11,15 @@ export function RegisterPage() {
   return (
     <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
-        <div className="text-center mb-8">
-          <div className="text-4xl mb-3">🏰</div>
-          <h1 className="text-3xl font-bold text-[var(--color-primary)]">Join QuestBoard</h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-1">
-            Create your hero and begin your quest
-          </p>
+        <div className="mb-8">
+          <AppLogo variant="auth" />
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle>Create Account</CardTitle>
             <CardDescription>
-              Choose your hero archetype — 8 classes, 4 colour variants, 32 unique heroes
+              Choose your team role — 8 departments, 4 colour variants, 32 unique profiles
             </CardDescription>
           </CardHeader>
           <CardContent>

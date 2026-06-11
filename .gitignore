@@ -17,3 +17,6 @@ coverage/
 
 # Binary design docs (large, not source code)
 *.docx
+
+# MCP bridge runtime data (generated, not source)
+data/

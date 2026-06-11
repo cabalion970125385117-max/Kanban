@@ -1,0 +1,263 @@
+import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { ArrowLeft, Settings, Bug, Scroll, GanttChartSquare, Kanban, Zap, BarChart3, Users, TrendingUp, Tag, CheckSquare, Presentation, MapIcon, Flag, HelpCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { PresenceBar } from '@/components/collaboration/PresenceBar';
+import { NotificationDrawer } from '@/components/shared/NotificationDrawer';
+import { VersionBadge } from '@/components/shared/VersionBadge';
+import { BoardMembersDialog } from './BoardMembersDialog';
+import { ProgressReportModal } from './ProgressReportModal';
+import { BoardTagsDialog } from './BoardTagsDialog';
+import { SprintPanel } from './SprintPanel';
+import { useSettingsStore } from '@/stores/settings.store';
+import { useUiStore } from '@/stores/ui.store';
+import { useBoardStore } from '@/stores/board.store';
+import { useActiveSprint } from '@/hooks/useSprints';
+import type { Board } from '@questboard/shared';
+
+interface BoardHeaderProps {
+  board: Board;
+}
+
+export function BoardHeader({ board, onStandupClick }: BoardHeaderProps & { onStandupClick?: () => void }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isGantt = location.pathname.endsWith('/gantt');
+  const { openSettings } = useSettingsStore();
+  const { openBugReport, openChangelog } = useUiStore();
+  const [membersOpen, setMembersOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [tagsOpen, setTagsOpen] = useState(false);
+  const [sprintOpen, setSprintOpen] = useState(false);
+  const { bulkMode, setBulkMode, setSelectedCardIds } = useBoardStore();
+  const { data: activeSprint } = useActiveSprint(board.id);
+
+  return (
+    <>
+    <header className="bg-[var(--color-primary)] text-white px-4 py-3 flex items-center gap-4 shadow-md flex-shrink-0">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => navigate('/boards')}
+        className="text-white hover:bg-white/10"
+        aria-label="Back to boards"
+      >
+        <ArrowLeft className="h-4 w-4" />
+      </Button>
+
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <Kanban className="h-4 w-4 text-white/70 shrink-0" />
+        <h1 className="text-base font-bold truncate">{board.name}</h1>
+        {board.member_count != null && (
+          <span className="text-xs text-white/60 ml-1">
+            {board.member_count} {board.member_count === 1 ? 'member' : 'members'}
+          </span>
+        )}
+        <VersionBadge className="text-white/40 hidden sm:inline" />
+      </div>
+
+      <div className="flex items-center gap-1 shrink-0">
+        {/* Standup mode */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onStandupClick}
+          className="text-white hover:bg-white/10"
+          title="Standup mode"
+          aria-label="Standup mode"
+        >
+          <Presentation className="h-4 w-4" aria-hidden="true" />
+        </Button>
+
+        {/* Bulk select toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            const next = !bulkMode;
+            setBulkMode(next);
+            if (!next) setSelectedCardIds([]);
+          }}
+          className={bulkMode ? 'text-[var(--color-accent)] bg-white/20' : 'text-white hover:bg-white/10'}
+          title={bulkMode ? 'Exit select mode' : 'Select cards'}
+          aria-label={bulkMode ? 'Exit select mode' : 'Select cards'}
+          aria-pressed={bulkMode}
+        >
+          <CheckSquare className="h-4 w-4" aria-hidden="true" />
+        </Button>
+
+        {/* Roadmap */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate(`/boards/${board.id}/roadmap`)}
+          className="text-white hover:bg-white/10"
+          title="Roadmap"
+          aria-label="Roadmap"
+        >
+          <MapIcon className="h-4 w-4" aria-hidden="true" />
+        </Button>
+
+        {/* Sprints */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setSprintOpen(true)}
+          className={activeSprint ? 'text-yellow-300 hover:bg-white/10' : 'text-white hover:bg-white/10'}
+          title={activeSprint ? `Sprint: ${activeSprint.name}` : 'Sprints'}
+          aria-label="Sprints"
+        >
+          <Flag className="h-4 w-4" aria-hidden="true" />
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() =>
+            navigate(isGantt ? `/boards/${board.id}` : `/boards/${board.id}/gantt`)
+          }
+          className="text-white hover:bg-white/10 text-xs gap-1"
+          title={isGantt ? 'Switch to board view' : 'Switch to Gantt view'}
+          aria-label={isGantt ? 'Switch to board view' : 'Switch to Gantt view'}
+        >
+          {isGantt ? (
+            <>
+              <Kanban className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Board</span>
+            </>
+          ) : (
+            <>
+              <GanttChartSquare className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Gantt</span>
+            </>
+          )}
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate(`/boards/${board.id}/analytics`)}
+          className="text-white hover:bg-white/10"
+          title="Analytics"
+          aria-label="Analytics"
+        >
+          <BarChart3 className="h-4 w-4" aria-hidden="true" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate(`/boards/${board.id}/automation`)}
+          className="text-white hover:bg-white/10"
+          title="Automation rules"
+          aria-label="Automation rules"
+        >
+          <Zap className="h-4 w-4" aria-hidden="true" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setTagsOpen(true)}
+          className="text-white hover:bg-white/10"
+          title="Manage tags"
+          aria-label="Manage tags"
+        >
+          <Tag className="h-4 w-4" aria-hidden="true" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setMembersOpen(true)}
+          className="text-white hover:bg-white/10"
+          title="Board members"
+          aria-label="Board members"
+        >
+          <Users className="h-4 w-4" aria-hidden="true" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setReportOpen(true)}
+          className="text-white hover:bg-white/10"
+          title="Progress report"
+          aria-label="Progress report"
+        >
+          <TrendingUp className="h-4 w-4" aria-hidden="true" />
+        </Button>
+        <PresenceBar />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/wiki')}
+          className="text-white hover:bg-white/10"
+          title="Help &amp; documentation"
+          aria-label="Help & documentation"
+        >
+          <HelpCircle className="h-4 w-4" aria-hidden="true" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={openChangelog}
+          className="text-white hover:bg-white/10"
+          title="Changelog"
+          aria-label="Changelog"
+        >
+          <Scroll className="h-4 w-4" aria-hidden="true" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={openBugReport}
+          className="text-white hover:bg-white/10"
+          title="Report a bug"
+          aria-label="Report a bug"
+        >
+          <Bug className="h-4 w-4" aria-hidden="true" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={openSettings}
+          className="text-white hover:bg-white/10"
+          title="Settings"
+          aria-label="Settings"
+        >
+          <Settings className="h-4 w-4" aria-hidden="true" />
+        </Button>
+        <NotificationDrawer />
+      </div>
+    </header>
+
+    {membersOpen && (
+      <BoardMembersDialog
+        boardId={board.id}
+        boardOwnerId={board.owner_id}
+        onClose={() => setMembersOpen(false)}
+      />
+    )}
+
+    {reportOpen && (
+      <ProgressReportModal
+        boardId={board.id}
+        boardName={board.name}
+        onClose={() => setReportOpen(false)}
+      />
+    )}
+
+    {tagsOpen && (
+      <BoardTagsDialog
+        boardId={board.id}
+        boardName={board.name}
+        onClose={() => setTagsOpen(false)}
+      />
+    )}
+
+    {sprintOpen && (
+      <SprintPanel
+        boardId={board.id}
+        boardName={board.name}
+        onClose={() => setSprintOpen(false)}
+      />
+    )}
+    </>
+  );
+}

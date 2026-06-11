@@ -12,6 +12,7 @@ const badgeVariants = cva(
         high: 'bg-orange-100 text-orange-700',
         critical: 'bg-red-100 text-[var(--color-danger)] font-semibold',
         admin: 'bg-purple-100 text-purple-700',
+        maintenance: 'bg-amber-100 text-amber-700',
         member: 'bg-gray-100 text-gray-700',
         guest: 'bg-green-100 text-green-700',
         active: 'bg-green-100 text-green-700',

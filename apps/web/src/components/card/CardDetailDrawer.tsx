@@ -1,0 +1,393 @@
+import { useState, useEffect } from 'react';
+import { X, Calendar, Clock, Flag, Archive, Copy } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { PriorityBadge } from '@/components/shared/PriorityBadge';
+import { SubstepList } from './SubstepList';
+import { TimeTracker } from './TimeTracker';
+import { CommentThread } from './CommentThread';
+import { AttachmentPanel } from './AttachmentPanel';
+import { TypingIndicator } from '@/components/collaboration/TypingIndicator';
+import { MarkdownEditor } from './MarkdownEditor';
+import { MarkdownPreview } from './MarkdownPreview';
+import { CloneCardDialog } from './CloneCardDialog';
+import { ReactionBar } from './ReactionBar';
+import { DependencyPanel } from './DependencyPanel';
+import { AiBreakdownPanel } from './AiBreakdownPanel';
+import { EstimateAiPopover } from './EstimateAiPopover';
+import { useUpdateCard, useArchiveCard } from '@/hooks/useCard';
+import { useBoardStore } from '@/stores/board.store';
+import { AssigneesPanel } from './AssigneesPanel';
+import { TagsPanel } from './TagsPanel';
+import type { Card, Priority } from '@questboard/shared';
+
+interface CardDetailDrawerProps {
+  card: Card | null;
+  boardId: string;
+  onClose: () => void;
+  onOpenCard?: (card: Card) => void;
+  emitTypingStart?: (cardId: string) => void;
+  emitTypingStop?: (cardId: string) => void;
+}
+
+const PRIORITIES: Priority[] = ['low', 'medium', 'high', 'critical'];
+
+export function CardDetailDrawer({ card, boardId, onClose, onOpenCard, emitTypingStart, emitTypingStop }: CardDetailDrawerProps) {
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [title, setTitle] = useState('');
+  const [editingDesc, setEditingDesc] = useState(false);
+  const [description, setDescription] = useState('');
+  const [estimateHours, setEstimateHours] = useState<string>('');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [priority, setPriority] = useState<Priority>(card?.priority ?? 'medium');
+  const [coverColour, setCoverColour] = useState<string | null>(card?.cover_colour ?? null);
+  const [showClone, setShowClone] = useState(false);
+
+  const updateCard = useUpdateCard(boardId);
+  const archiveCard = useArchiveCard(boardId);
+  const columns = useBoardStore((s) => s.columns);
+
+  useEffect(() => {
+    if (card) {
+      setTitle(card.title);
+      setDescription(card.description ?? '');
+      setEstimateHours(card.estimate_hours != null ? String(card.estimate_hours) : '');
+      setStartDate(card.start_date ?? '');
+      setEndDate(card.end_date ?? '');
+      setPriority(card.priority);
+      setCoverColour(card.cover_colour ?? null);
+      setEditingTitle(false);
+      setEditingDesc(false);
+    }
+  }, [card?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!card) return null;
+
+  const columnName = columns.find((c) => c.id === card.column_id)?.name ?? '—';
+
+  const saveTitle = () => {
+    const trimmed = title.trim();
+    if (!trimmed || trimmed === card.title) { setEditingTitle(false); return; }
+    updateCard.mutate({ cardId: card.id, data: { title: trimmed } });
+    setEditingTitle(false);
+  };
+
+  const saveDescription = () => {
+    const val = description.trim() || null;
+    if (val !== card.description) {
+      updateCard.mutate({ cardId: card.id, data: { description: val } });
+    }
+    setEditingDesc(false);
+  };
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div className="fixed inset-0 bg-black/20 z-40" onClick={onClose} />
+
+      {/* Drawer */}
+      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-[var(--color-surface)] shadow-2xl z-50 flex flex-col overflow-hidden">
+
+        {/* ── Header ── */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--color-border)] flex-shrink-0">
+          <span className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
+            {columnName}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button
+              size="icon" variant="ghost"
+              onClick={() => setShowClone(true)}
+              className="text-[var(--color-text-muted)] hover:text-[var(--color-accent)]"
+              title="Duplicate card"
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+            <Button
+              size="icon" variant="ghost"
+              onClick={() => archiveCard.mutate(card.id, { onSuccess: onClose })}
+              className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"
+              title="Archive card"
+            >
+              <Archive className="h-4 w-4" />
+            </Button>
+            <Button size="icon" variant="ghost" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* ── Scrollable body ── */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+
+          {/* Title */}
+          <div>
+            {editingTitle ? (
+              <Input
+                autoFocus
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onBlur={saveTitle}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') saveTitle();
+                  if (e.key === 'Escape') { setTitle(card.title); setEditingTitle(false); }
+                }}
+                className="text-base font-semibold"
+              />
+            ) : (
+              <h2
+                onClick={() => setEditingTitle(true)}
+                className="text-base font-semibold text-[var(--color-text)] cursor-pointer hover:bg-[var(--color-bg)] rounded px-1 -mx-1 py-0.5"
+              >
+                {card.title}
+              </h2>
+            )}
+          </div>
+
+          {/* Reactions */}
+          <div>
+            <ReactionBar cardId={card.id} />
+          </div>
+
+          {/* Cover colour */}
+          <div>
+            <label className="text-xs font-medium text-[var(--color-text-muted)] flex items-center gap-1 mb-2">
+              Cover color
+            </label>
+            <div className="flex items-center gap-2 flex-wrap">
+              {['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#14b8a6'].map((c) => (
+                <button
+                  key={c}
+                  title={c}
+                  onClick={() => {
+                    const next = coverColour === c ? null : c;
+                    setCoverColour(next);
+                    updateCard.mutate({ cardId: card.id, data: { cover_colour: next } });
+                  }}
+                  className="w-6 h-6 rounded-full border-2 transition-transform hover:scale-110"
+                  style={{
+                    backgroundColor: c,
+                    borderColor: coverColour === c ? '#fff' : 'transparent',
+                    boxShadow: coverColour === c ? `0 0 0 2px ${c}` : 'none',
+                  }}
+                />
+              ))}
+              {coverColour && (
+                <button
+                  onClick={() => {
+                    setCoverColour(null);
+                    updateCard.mutate({ cardId: card.id, data: { cover_colour: null } });
+                  }}
+                  className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+            {coverColour && (
+              <div className="mt-2 h-2 rounded-full w-full" style={{ backgroundColor: coverColour }} />
+            )}
+          </div>
+
+          {/* Priority */}
+          <div>
+            <label className="text-xs font-medium text-[var(--color-text-muted)] flex items-center gap-1 mb-2">
+              <Flag className="h-3.5 w-3.5" /> Priority
+            </label>
+            <div className="flex gap-1.5 flex-wrap">
+              {PRIORITIES.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => {
+                    setPriority(p);
+                    updateCard.mutate({ cardId: card.id, data: { priority: p } });
+                  }}
+                  className={`rounded-full transition-opacity ${
+                    priority === p
+                      ? 'ring-2 ring-offset-1 ring-[var(--color-accent)]'
+                      : 'opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  <PriorityBadge priority={p} />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Assignees */}
+          <AssigneesPanel card={card} boardId={boardId} />
+
+          {/* Tags */}
+          <TagsPanel cardId={card.id} boardId={boardId} tags={card.tags ?? []} />
+
+          {/* Dates + Estimate */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-[var(--color-text-muted)] flex items-center gap-1 mb-1">
+                <Calendar className="h-3.5 w-3.5" /> Start
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setStartDate(val);
+                  updateCard.mutate({ cardId: card.id, data: { start_date: val || null } });
+                }}
+                className="w-full text-sm border border-[var(--color-border)] rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] bg-[var(--color-surface)] text-[var(--color-text)]"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-[var(--color-text-muted)] flex items-center gap-1 mb-1">
+                <Calendar className="h-3.5 w-3.5" /> Due
+              </label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setEndDate(val);
+                  updateCard.mutate({ cardId: card.id, data: { end_date: val || null } });
+                }}
+                className="w-full text-sm border border-[var(--color-border)] rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] bg-[var(--color-surface)] text-[var(--color-text)]"
+              />
+            </div>
+          </div>
+
+          {/* Estimate */}
+          <div>
+            <div className="flex items-center gap-1 mb-1">
+              <label className="text-xs font-medium text-[var(--color-text-muted)] flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" /> Estimate (hours)
+              </label>
+              <EstimateAiPopover
+                card={card}
+                onEstimate={(h) => {
+                  const s = String(h);
+                  setEstimateHours(s);
+                  updateCard.mutate({ cardId: card.id, data: { estimate_hours: h } });
+                }}
+              />
+            </div>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              value={estimateHours}
+              onChange={(e) => setEstimateHours(e.target.value)}
+              onBlur={() => {
+                const val = estimateHours.trim();
+                const parsed = val ? parseFloat(val) : null;
+                const current = card.estimate_hours ?? null;
+                if (parsed !== current) {
+                  updateCard.mutate({ cardId: card.id, data: { estimate_hours: parsed } });
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                if (e.key === 'Escape') setEstimateHours(card.estimate_hours != null ? String(card.estimate_hours) : '');
+              }}
+              className="w-28 text-sm border border-[var(--color-border)] rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] bg-[var(--color-surface)] text-[var(--color-text)]"
+            />
+          </div>
+
+          {/* Description — markdown editor */}
+          <div>
+            <label className="text-xs font-medium text-[var(--color-text-muted)] mb-1 block">
+              Description
+            </label>
+            {editingDesc ? (
+              <MarkdownEditor
+                value={description}
+                onChange={setDescription}
+                boardId={boardId}
+                autoFocus
+                onSave={saveDescription}
+                onCancel={() => {
+                  emitTypingStop?.(card.id);
+                  setDescription(card.description ?? '');
+                  setEditingDesc(false);
+                }}
+                onTypingStart={() => emitTypingStart?.(card.id)}
+                onTypingStop={() => emitTypingStop?.(card.id)}
+              />
+            ) : (
+              <div
+                onClick={() => setEditingDesc(true)}
+                className="min-h-[64px] text-sm text-[var(--color-text)] bg-[var(--color-bg)] rounded px-3 py-2 cursor-pointer hover:bg-[var(--color-border)]/30 transition-colors"
+              >
+                {card.description ? (
+                  <MarkdownPreview markdown={card.description} />
+                ) : (
+                  <span className="text-[var(--color-text-muted)]">Add a description…</span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* ── Attachments ── */}
+          <div className="border-t border-[var(--color-border)] pt-4">
+            <AttachmentPanel cardId={card.id} />
+          </div>
+
+          {/* ── Subtasks ── */}
+          <div className="border-t border-[var(--color-border)] pt-4 space-y-3">
+            <SubstepList cardId={card.id} />
+            <AiBreakdownPanel card={card} />
+          </div>
+
+          {/* ── Dependencies ── */}
+          <div className="border-t border-[var(--color-border)] pt-4">
+            <DependencyPanel cardId={card.id} boardId={boardId} />
+          </div>
+
+          {/* Labels */}
+          {card.labels && card.labels.length > 0 && (
+            <div className="border-t border-[var(--color-border)] pt-4">
+              <label className="text-xs font-medium text-[var(--color-text-muted)] mb-2 block">Labels</label>
+              <div className="flex flex-wrap gap-1.5">
+                {card.labels.map((label) => (
+                  <span
+                    key={label.id}
+                    className="px-2 py-0.5 rounded-full text-xs font-medium text-white"
+                    style={{ backgroundColor: label.colour }}
+                  >
+                    {label.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Time Tracking ── */}
+          <div className="border-t border-[var(--color-border)] pt-4">
+            <TimeTracker
+              cardId={card.id}
+              estimateHours={estimateHours ? parseFloat(estimateHours) : null}
+            />
+          </div>
+
+          {/* ── Comments ── */}
+          <div className="border-t border-[var(--color-border)] pt-4 pb-4">
+            <TypingIndicator cardId={card.id} />
+            <CommentThread cardId={card.id} boardId={boardId} />
+          </div>
+
+        </div>
+      </div>
+
+      {/* Clone dialog */}
+      {showClone && (
+        <CloneCardDialog
+          card={card}
+          boardId={boardId}
+          onClose={() => setShowClone(false)}
+          onCloned={(newCard) => {
+            setShowClone(false);
+            onOpenCard?.(newCard);
+          }}
+        />
+      )}
+    </>
+  );
+}
