@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Settings, Bug, Scroll, GanttChartSquare, Kanban, Zap, BarChart3, Users, TrendingUp, Tag, CheckSquare, Presentation, MapIcon, Flag } from 'lucide-react';
+import { ArrowLeft, Settings, Bug, Scroll, GanttChartSquare, Kanban, Zap, BarChart3, Users, TrendingUp, Tag, CheckSquare, Presentation, MapIcon, Flag, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PresenceBar } from '@/components/collaboration/PresenceBar';
 import { NotificationDrawer } from '@/components/shared/NotificationDrawer';
@@ -183,6 +183,16 @@ export function BoardHeader({ board, onStandupClick }: BoardHeaderProps & { onSt
           <TrendingUp className="h-4 w-4" aria-hidden="true" />
         </Button>
         <PresenceBar />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/wiki')}
+          className="text-white hover:bg-white/10"
+          title="Help &amp; documentation"
+          aria-label="Help & documentation"
+        >
+          <HelpCircle className="h-4 w-4" aria-hidden="true" />
+        </Button>
         <Button
           variant="ghost"
           size="icon"

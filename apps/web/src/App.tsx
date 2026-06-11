@@ -30,6 +30,7 @@ const CalendarPage           = lazy(() => import('@/pages/CalendarPage').then(m 
 const MyWorkPage             = lazy(() => import('@/pages/MyWorkPage').then(m => ({ default: m.MyWorkPage })));
 const RoadmapPage            = lazy(() => import('@/pages/RoadmapPage').then(m => ({ default: m.RoadmapPage })));
 const SprintBacklogPage      = lazy(() => import('@/pages/SprintBacklogPage').then(m => ({ default: m.SprintBacklogPage })));
+const WikiPage               = lazy(() => import('@/pages/WikiPage').then(m => ({ default: m.WikiPage })));
 
 function PageFallback() {
   return (
@@ -95,6 +96,7 @@ export function App() {
               <Route path="/boards/:boardId/roadmap" element={<RoadmapPage />} />
               <Route path="/boards/:boardId/sprint" element={<SprintBacklogPage />} />
               <Route path="/my-work" element={<MyWorkPage />} />
+              <Route path="/wiki" element={<WikiPage />} />
               <Route element={<AdminRoute />}>
                 <Route path="/maintenance" element={<MaintenancePage />} />
               </Route>

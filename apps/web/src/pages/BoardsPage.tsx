@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Plus, LayoutGrid, LogOut, Settings, Bug, Scroll, MoreHorizontal, Archive, Trash2, Inbox, Sparkles } from 'lucide-react';
+import { Plus, LayoutGrid, LogOut, Settings, Bug, Scroll, MoreHorizontal, Archive, Trash2, Inbox, Sparkles, HelpCircle } from 'lucide-react';
 import { BoardTemplateGallery } from '@/components/board/BoardTemplateGallery';
 import { useAuthStore } from '@/stores/auth.store';
 import { useSettingsStore } from '@/stores/settings.store';
@@ -181,6 +181,7 @@ export function BoardsPage() {
               <Badge variant={user.role as UserRole}>{user.role}</Badge>
             </div>
           )}
+          <Button variant="ghost" size="icon" onClick={() => navigate('/wiki')} className="text-white hover:bg-white/10" title="Help &amp; documentation"><HelpCircle className="h-4 w-4" /></Button>
           <Button variant="ghost" size="icon" onClick={openChangelog} className="text-white hover:bg-white/10" title="Changelog"><Scroll className="h-4 w-4" /></Button>
           <Button variant="ghost" size="icon" onClick={openBugReport} className="text-white hover:bg-white/10" title="Report a bug"><Bug className="h-4 w-4" /></Button>
           <Button variant="ghost" size="icon" onClick={openSettings} className="text-white hover:bg-white/10" title="Settings"><Settings className="h-4 w-4" /></Button>
